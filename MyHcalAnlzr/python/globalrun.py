@@ -23,8 +23,8 @@ process.load("RecoLocalTracker.SiPixelRecHits.SiPixelRecHits_cfi")
 
 process.source = cms.Source("PoolSource",
         fileNames = cms.untracked.vstring(
-		"file:/eos/cms/tier0/store/data/Run2022D/Cosmics/RAW/v1/000/358/030/00000/38c224b2-b659-4acb-90f9-705bf9cc120a.root",
-		"file:/eos/cms/tier0/store/data/Run2022D/Cosmics/RAW/v1/000/358/092/00000/12c18f49-2893-412a-9bdc-d5424e89f3f6.root",
+		#"file:/eos/cms/tier0/store/data/Run2022D/Cosmics/RAW/v1/000/358/030/00000/38c224b2-b659-4acb-90f9-705bf9cc120a.root",
+		#"file:/eos/cms/tier0/store/data/Run2022D/Cosmics/RAW/v1/000/358/092/00000/12c18f49-2893-412a-9bdc-d5424e89f3f6.root",
 		"file:/eos/cms/tier0/store/data/Run2022D/Cosmics/RAW/v1/000/358/152/00000/08d8d6df-d609-4b03-9188-6834ae88a976.root",
 		"file:/eos/cms/tier0/store/data/Run2022D/Cosmics/RAW/v1/000/358/155/00000/0a4e7f59-3130-4a3d-9897-ca3ec7e69121.root",
 		"file:/eos/cms/tier0/store/data/Run2022D/Cosmics/RAW/v1/000/358/164/00000/0afce2c7-1c39-4e04-9a89-267896298b9f.root",
@@ -58,7 +58,7 @@ process.MyHcalAnlzr = cms.EDAnalyzer('MyHcalAnlzr',
 )
 
 process.TFileService = cms.Service("TFileService",
-      fileName = cms.string("output_CosmicsRuns.root"),
+      fileName = cms.string("/eos/user/d/dmroy/HCAL/MyHcalAnlzr/output_CosmicsRuns.root"),
       closeFileFast = cms.untracked.bool(True)
 )
 
