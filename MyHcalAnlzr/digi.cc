@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
 
   // #7:
   //vector<float> days = {48, 49, 50, 51, 52};
-  //vector<float> lumi = {9.165, 9.649, 9.649, 9.649, 9.649};
+  //vector<float> lumi = {9.165, 9.6485, 9.649, 9.649, 9.649};
   //vector<float> floatday = {22.08, 23.08, 24.08, 25.08, 26.08};
   //vector<string> runid = {"357845", "357968", "357996", "358087", "358101"};
 
@@ -189,14 +189,17 @@ int main(int argc, char *argv[])
   TH1F **** pedMean;
   TH1F **** pedRMS;
   TH1F **** PEDMeanDepth;
+  TH1F **** PEDRMSDepth;
   pedMean = new TH1F***[2];
   pedRMS = new TH1F***[2];
   PEDMeanDepth = new TH1F***[2];
+  PEDRMSDepth = new TH1F***[2];
   for(int nh=0; nh<2; nh++){ // HB and HE
     string det = nh==0?"HB":"HE";
     pedMean[nh]=new TH1F**[2];
     pedRMS[nh]=new TH1F**[2];
     PEDMeanDepth[nh]=new TH1F**[2];
+    PEDRMSDepth[nh]=new TH1F**[2];
     for(int nt=0; nt<2; nt++){ // 0=Small SiPM, 1=Large SiPM
       pedMean[nh][nt]=new TH1F*[nruns];
       pedRMS[nh][nt]=new TH1F*[nruns];
@@ -207,8 +210,10 @@ int main(int argc, char *argv[])
     }
     for(int k=0; k<7; k++){ // Depth
       PEDMeanDepth[nh][k]=new TH1F*[nruns];
+      PEDRMSDepth[nh][k]=new TH1F*[nruns];
       for(int n=0; n<nruns; n++){ // One per run
         PEDMeanDepth[nh][k][n] = new TH1F((det+"_depth"+to_string(k)+"pedMean_run"+runid.at(n)).c_str(), "Pedestal Mean; ADC; Entries", 1600, 0, 40);
+        PEDRMSDepth[nh][k][n] = new TH1F((det+"_depth"+to_string(k)+"pedRMS_run"+runid.at(n)).c_str(), "Pedestal RMS; ADC; Entries", 1600, 0, 40);
       }
     }
   }
@@ -255,6 +260,7 @@ int main(int argc, char *argv[])
               pedMean[nh][t][n]->Fill(histarray[n][t][i][j][k]->GetMean());
               pedRMS[nh][t][n]->Fill(histarray[n][t][i][j][k]->GetRMS());
               PEDMeanDepth[nh][k][n]->Fill(histarray[n][t][i][j][k]->GetMean());
+              PEDRMSDepth[nh][k][n]->Fill(histarray[n][t][i][j][k]->GetRMS());
               if(t==1 && nh==0 && histarray[n][t][i][j][k]->GetMean() < 5.6) h3->Fill(i<29?i-29:i-28, j, k+1); // Large SiPM, HB, Small mean
             }
           }
@@ -336,6 +342,7 @@ int main(int argc, char *argv[])
     for(int k=0; k<7; k++){
       for(int n=0; n<nruns; n++){
          PEDMeanDepth[nh][k][n]->Write();
+         PEDRMSDepth[nh][k][n]->Write();
       }
     }
   }

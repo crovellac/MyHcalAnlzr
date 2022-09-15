@@ -192,17 +192,19 @@ for subdet in ["HB", "HE"]:
 
   for depth in [1, 2, 3, 4, 5, 6, 7]:
     hdepth[subdet][depth] = {}
-    if "depth"+subdet+str(depth) not in maxlimit: maxlimit["depth"+subdet+str(depth)] = [0, 999, 0]
-    for run in runs:
-      hdepth[subdet][depth][run] = fin.Get(subdet+"_depth"+str(depth-1)+"pedMean_run"+run)
-      maxval = hdepth[subdet][depth][run].GetMaximum()
-      leftbin = hdepth[subdet][depth][run].GetBinCenter(hdepth[subdet][depth][run].FindFirstBinAbove(0))
-      rightbin = hdepth[subdet][depth][run].GetBinCenter(hdepth[subdet][depth][run].FindLastBinAbove(0))
-      if maxlimit["depth"+subdet+str(depth)][0] < maxval: maxlimit["depth"+subdet+str(depth)][0] = maxval
-      if maxlimit["depth"+subdet+str(depth)][1] > leftbin: maxlimit["depth"+subdet+str(depth)][1] = leftbin
-      if maxlimit["depth"+subdet+str(depth)][2] < rightbin: maxlimit["depth"+subdet+str(depth)][2] = rightbin
-    hdepth[subdet][depth][runs[-1]].GetXaxis().SetRangeUser(maxlimit["depth"+subdet+str(depth)][1], maxlimit["depth"+subdet+str(depth)][2])
-    hdepth[subdet][depth][runs[-1]].GetYaxis().SetRangeUser(0, maxlimit["depth"+subdet+str(depth)][0]*1.3)
+    for alpha in ["Mean", "RMS"]:
+      if "depth"+alpha+subdet+str(depth) not in maxlimit: maxlimit["depth"+alpha+subdet+str(depth)] = [0, 999, 0]
+      hdepth[subdet][depth][alpha] = {}
+      for run in runs:
+        hdepth[subdet][depth][alpha][run] = fin.Get(subdet+"_depth"+str(depth-1)+"ped"+alpha+"_run"+run)
+        maxval = hdepth[subdet][depth][alpha][run].GetMaximum()
+        leftbin = hdepth[subdet][depth][alpha][run].GetBinCenter(hdepth[subdet][depth][alpha][run].FindFirstBinAbove(0))
+        rightbin = hdepth[subdet][depth][alpha][run].GetBinCenter(hdepth[subdet][depth][alpha][run].FindLastBinAbove(0))
+        if maxlimit["depth"+alpha+subdet+str(depth)][0] < maxval: maxlimit["depth"+alpha+subdet+str(depth)][0] = maxval
+        if maxlimit["depth"+alpha+subdet+str(depth)][1] > leftbin: maxlimit["depth"+alpha+subdet+str(depth)][1] = leftbin
+        if maxlimit["depth"+alpha+subdet+str(depth)][2] < rightbin: maxlimit["depth"+alpha+subdet+str(depth)][2] = rightbin
+      hdepth[subdet][depth][alpha][runs[-1]].GetXaxis().SetRangeUser(maxlimit["depth"+alpha+subdet+str(depth)][1], maxlimit["depth"+alpha+subdet+str(depth)][2])
+      hdepth[subdet][depth][alpha][runs[-1]].GetYaxis().SetRangeUser(0, maxlimit["depth"+alpha+subdet+str(depth)][0]*1.3)
 
 
 for alpha in ["Mean", "RMS"]:
@@ -237,29 +239,34 @@ for alpha in ["Mean", "RMS"]:
   c[-1].Divide(2,2)
 
 
-for subdet in ["HE", "HB"]:
-  c.append(ROOT.TCanvas( 'c'+str(len(c)+1), 'c'+str(len(c)+1), 1600, 800 ))
-  c[-1].Divide(4,2)
-  i=1
-  for depth in [1, 2, 3, 4, 5, 6, 7]:
-    c[-1].cd(i)
-    for j,run in enumerate(reversed(runs)):
-      hdepth[subdet][depth][run].SetLineColor(j+1)
-      label = subdet + " depth " + str(depth) + " Pedestal Mean"
-      if j==0:
-        hdepth[subdet][depth][run].GetXaxis().SetTitle("Pedestal Mean (QIE11 ADC)")
-        hdepth[subdet][depth][run].SetTitle(label)
-        hdepth[subdet][depth][run].Draw()
-      else:
-        hdepth[subdet][depth][run].Draw("same")
-    legend.append(ROOT.TLegend(0.1,0.8,0.9,0.9))
-    legend[-1].SetNColumns(2)
-    for run in runs:
-      legend[-1].AddEntry(hdepth[subdet][depth][run],"run"+run+", Mean={:.3f}".format(hdepth[subdet][depth][run].GetMean()),"l")
-    legend[-1].Draw()
-    i += 1
-  c[-1].Draw()
-  c[-1].SaveAs(output+"PedestalPerDepth_Mean_"+subdet+".png")
-  c[-1].SaveAs(output+"PedestalPerDepth_Mean_"+subdet+".pdf")
+  for subdet in ["HE", "HB"]:
+    if subdet=="HE":
+      c.append(ROOT.TCanvas( 'c'+str(len(c)+1), 'c'+str(len(c)+1), 1600, 800 ))
+      c[-1].Divide(4,2)
+    else:
+      c.append(ROOT.TCanvas( 'c'+str(len(c)+1), 'c'+str(len(c)+1), 800, 800 ))
+      c[-1].Divide(2,2)
+    i=1
+    for depth in [1, 2, 3, 4, 5, 6, 7]:
+      if subdet=="HB" and depth>4: continue
+      c[-1].cd(i)
+      for j,run in enumerate(reversed(runs)):
+        hdepth[subdet][depth][alpha][run].SetLineColor(j+1)
+        label = subdet + " depth " + str(depth) + " Pedestal "+alpha
+        if j==0:
+          hdepth[subdet][depth][alpha][run].GetXaxis().SetTitle("Pedestal "+alpha+" (QIE11 ADC)")
+          hdepth[subdet][depth][alpha][run].SetTitle(label)
+          hdepth[subdet][depth][alpha][run].Draw()
+        else:
+          hdepth[subdet][depth][alpha][run].Draw("same")
+      legend.append(ROOT.TLegend(0.1,0.8,0.9,0.9))
+      legend[-1].SetNColumns(2)
+      for run in runs:
+        legend[-1].AddEntry(hdepth[subdet][depth][alpha][run],"run"+run+", Mean={:.3f}".format(hdepth[subdet][depth][alpha][run].GetMean()),"l")
+      legend[-1].Draw()
+      i += 1
+    c[-1].Draw()
+    c[-1].SaveAs(output+"PedestalPerDepth_"+alpha+"_"+subdet+".png")
+    c[-1].SaveAs(output+"PedestalPerDepth_"+alpha+"_"+subdet+".pdf")
 
 
