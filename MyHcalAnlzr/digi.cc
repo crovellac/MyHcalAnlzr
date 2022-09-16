@@ -77,69 +77,75 @@ int main(int argc, char *argv[])
   // 64 = 07.09. (358543 / 9.649)
   // 66 = 09.09. (358595 / 9.649)
   // 69 = 12.09. (358663 / 9.649)
+  // 72 = 15.09. (358812 / 9.649)
   // 87 = 30.09.
 
   // New files to process:
   // #1:
   //vector<float> days = {0, 7, 8, 9, 10};
   //vector<float> lumi = {0.001, 0.030, 0.052, 0.053, 0.101};
-  //vector<float> floatday = {05.07, 12.07, 13.07, 14.07, 15.07};
+  //vector<string> floatday = {"05.07", "12.07", "13.07", "14.07", "15.07"};
   //vector<string> runid = {"355079", "355538", "355573", "355669", "355710"};
 
   // #2:
   //vector<float> days = {13, 14, 15, 16, 17};
   //vector<float> lumi = {0.120, 0.1205, 0.178, 0.206, 0.272};
-  //vector<float> floatday = {18.07, 19.07, 20.07, 21.07, 22.07};
+  //vector<string> floatday = {"18.07", "19.07", "20.07", "21.07", "22.07"};
   //vector<string> runid = {"355776", "355838", "355882", "355947", "356016"};
 
   // #3:
   //vector<float> days = {20, 25, 27, 28, 29};
   //vector<float> lumi = {0.425, 1.059, 1.487, 1.820, 2.077};
-  //vector<float> floatday = {25.07, 30.07, 01.08, 02.08, 03.08};
+  //vector<string> floatday = {"25.07", "30.07", "01.08", "02.08", "03.08"};
   //vector<string> runid = {"356115", "356457", "356538", "356590", "356646"};
 
   // #4:
   //vector<float> days = {31, 32, 33, 34, 36};
   //vector<float> lumi = {2.786, 2.820, 3.312, 3.643, 4.408};
-  //vector<float> floatday = {05.08, 06.08, 07.08, 08.08, 10.08};
+  //vector<string> floatday = {"05.08", "06.08", "07.08", "08.08", "10.08"};
   //vector<string> runid = {"356829", "356926", "356958", "357008", "357142"};
 
   // #5:
   //vector<float> days = {37, 38, 39, 40, 41};
   //vector<float> lumi = {4.837, 5.245, 5.442, 5.950, 6.333};
-  //vector<float> floatday = {11.08, 12.08, 13.08, 14.08, 15.08};
+  //vector<string> floatday = {"11.08", "12.08", "13.08", "14.08", "15.08"};
   //vector<string> runid = {"357287", "357337", "357415", "357456", "357501"};
 
   // #6:
   //vector<float> days = {42, 43, 44, 46, 47};
   //vector<float> lumi = {6.434, 6.788, 6.7885, 7.950, 8.585};
-  //vector<float> floatday = {16.08, 17.08, 18.08, 20.08, 21.08};
+  //vector<string> floatday = {"16.08", "17.08", "18.08", "20.08", "21.08"};
   //vector<string> runid = {"357564", "357622", "357646", "357743", "357787"};
 
   // #7:
   //vector<float> days = {48, 49, 50, 51, 52};
   //vector<float> lumi = {9.165, 9.6485, 9.649, 9.649, 9.649};
-  //vector<float> floatday = {22.08, 23.08, 24.08, 25.08, 26.08};
+  //vector<string> floatday = {"22.08", "23.08", "24.08", "25.08", "26.08"};
   //vector<string> runid = {"357845", "357968", "357996", "358087", "358101"};
 
   // #8:
   //vector<float> days = {54, 55, 56, 57, 58};
   //vector<float> lumi = {9.649, 9.649, 9.649, 9.649, 9.649};
-  //vector<float> floatday = {28.08, 29.08, 30.08, 31.08, 01.09};
+  //vector<string> floatday = {"28.08", "29.08", "30.08", "31.08", "01.09"};
   //vector<string> runid = {"358160", "358179", "358222", "358277", "358303"};
 
   // #9:
   //vector<float> days = {59, 62, 63, 64, 66};
   //vector<float> lumi = {9.649, 9.649, 9.649, 9.649, 9.649};
-  //vector<float> floatday = {02.09, 05.09, 06.09, 07.09, 09.09};
+  //vector<string> floatday = {"02.09", "05.09", "06.09", "07.09", "09.09"};
   //vector<string> runid = {"358338", "358430", "358488", "358543", "358595"};
 
   // #10:
   vector<float> days = {69, 72};
   vector<float> lumi = {9.649, 9.649};
-  vector<float> floatday = {12.09, 15.09};
+  vector<string> floatday = {"12.09", "15.09"};
   vector<string> runid = {"358663", "358812"};
 
+  // Global:
+  //vector<float> days = {42};
+  //vector<float> lumi = {6.434};
+  //vector<string> floatday = {"16.08"};
+  //vector<string> runid = {"357559"};
 
   /*reverse(days.begin(), days.end());
   reverse(lumi.begin(), lumi.end());
@@ -250,7 +256,7 @@ int main(int argc, char *argv[])
   TH3F* h3 = new TH3F("h3", "h3", 59, -29, 30, 72, 0, 72, 7, 1, 8);
   ofstream tablefile;
   for(int n=0; n<nruns; n++){
-    tablefile.open("Table_Run"+runid[n]+".txt");
+    tablefile.open("Table_Run"+runid[n]+"_"+floatday[n]+".2022.txt");
     tablefile << setw(8) << "SiPM" << setw(8) << "ieta" << setw(8) << "iphi" << setw(8) << "depth" << setw(12) << "Mean" << setw(12) << "RMS" << "\n";
     for(int t=0; t<2; t++){
       for(int i=0; i<58; i++){
