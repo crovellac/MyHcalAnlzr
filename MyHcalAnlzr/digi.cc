@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
               pedRMS[nh][t][n]->Fill(histarray[n][t][i][j][k]->GetRMS());
               PEDMeanDepth[nh][k][n]->Fill(histarray[n][t][i][j][k]->GetMean());
               PEDRMSDepth[nh][k][n]->Fill(histarray[n][t][i][j][k]->GetRMS());
-              tablefile << setw(8) << (t==0?"Small":"Large") << setw(8) << (i<29?i-29:i-28) << setw(8) << j << setw(8) << k << setw(12) << pedMean[nh][t][n]->GetMean() << setw(12) << pedRMS[nh][t][n]->GetRMS() << "\n";
+              tablefile << setw(8) << (t==0?"Small":"Large") << setw(8) << (i<29?i-29:i-28) << setw(8) << (j+1) << setw(8) << k << setw(12) << pedMean[nh][t][n]->GetMean() << setw(12) << pedRMS[nh][t][n]->GetRMS() << "\n";
               if(t==1 && nh==0 && histarray[n][t][i][j][k]->GetMean() < 5.6) h3->Fill(i<29?i-29:i-28, j, k+1); // Large SiPM, HB, Small mean
             }
           }

@@ -99,7 +99,7 @@ for subdet in ["HB", "HE"]:
 
 grdict = {}
 grdict["Mean of per-channel pedestal RMS"] = ["Mean", "RMS"]
-grdict["RMS of per-channel pedestal means"] = ["RMS", "Mean"]
+grdict["RMS of per-channel pedestal Mean"] = ["RMS", "Mean"]
 grdict["Mean of per-channel pedestal Mean"] = ["Mean", "Mean"]
 c = []
 legend = []
@@ -177,34 +177,39 @@ for subdet in ["HB", "HE"]:
   for size in [1, 0]: # Large and Small
     h[subdet][size] = {}
     for alpha in ["Mean", "RMS"]:
-      if alpha+subdet+str(size) not in maxlimit: maxlimit[alpha+subdet+str(size)] = [0, 999, 0] # Highest y-axis value, Smallest bin with entry, Highest bin with entry
+      if alpha+subdet not in maxlimit: maxlimit[alpha+subdet] = [0, 999, 0] # Highest y-axis value, Smallest bin with entry, Highest bin with entry
       h[subdet][size][alpha] = {}
       for run in runs:
         h[subdet][size][alpha][run] = fin.Get(subdet+"_sipmT"+str(size)+"ped"+alpha+"_run"+run)
         maxval = h[subdet][size][alpha][run].GetMaximum()
         leftbin = h[subdet][size][alpha][run].GetBinCenter(h[subdet][size][alpha][run].FindFirstBinAbove(0))
         rightbin = h[subdet][size][alpha][run].GetBinCenter(h[subdet][size][alpha][run].FindLastBinAbove(0))
-        if maxlimit[alpha+subdet+str(size)][0] < maxval: maxlimit[alpha+subdet+str(size)][0] = maxval
-        if maxlimit[alpha+subdet+str(size)][1] > leftbin: maxlimit[alpha+subdet+str(size)][1] = leftbin
-        if maxlimit[alpha+subdet+str(size)][2] < rightbin: maxlimit[alpha+subdet+str(size)][2] = rightbin
-      h[subdet][size][alpha][runs[-1]].GetXaxis().SetRangeUser(maxlimit[alpha+subdet+str(size)][1], maxlimit[alpha+subdet+str(size)][2])
-      h[subdet][size][alpha][runs[-1]].GetYaxis().SetRangeUser(0, maxlimit[alpha+subdet+str(size)][0]*1.3)
+        if maxlimit[alpha+subdet][0] < maxval: maxlimit[alpha+subdet][0] = maxval
+        if maxlimit[alpha+subdet][1] > leftbin: maxlimit[alpha+subdet][1] = leftbin
+        if maxlimit[alpha+subdet][2] < rightbin: maxlimit[alpha+subdet][2] = rightbin
+  for size in [1, 0]: 
+    for alpha in ["Mean", "RMS"]:
+      h[subdet][size][alpha][runs[-1]].GetXaxis().SetRangeUser(maxlimit[alpha+subdet][1], maxlimit[alpha+subdet][2])
+      h[subdet][size][alpha][runs[-1]].GetYaxis().SetRangeUser(0, maxlimit[alpha+subdet][0]*1.3)
 
-  for depth in [1, 2, 3, 4, 5, 6, 7]:
+  depths = [1, 2, 3, 4, 5, 6, 7] if subdet=="HE" else [1, 2, 3, 4]
+  for depth in depths:
     hdepth[subdet][depth] = {}
     for alpha in ["Mean", "RMS"]:
-      if "depth"+alpha+subdet+str(depth) not in maxlimit: maxlimit["depth"+alpha+subdet+str(depth)] = [0, 999, 0]
+      if "depth"+alpha+subdet not in maxlimit: maxlimit["depth"+alpha+subdet] = [0, 999, 0]
       hdepth[subdet][depth][alpha] = {}
       for run in runs:
         hdepth[subdet][depth][alpha][run] = fin.Get(subdet+"_depth"+str(depth-1)+"ped"+alpha+"_run"+run)
         maxval = hdepth[subdet][depth][alpha][run].GetMaximum()
         leftbin = hdepth[subdet][depth][alpha][run].GetBinCenter(hdepth[subdet][depth][alpha][run].FindFirstBinAbove(0))
         rightbin = hdepth[subdet][depth][alpha][run].GetBinCenter(hdepth[subdet][depth][alpha][run].FindLastBinAbove(0))
-        if maxlimit["depth"+alpha+subdet+str(depth)][0] < maxval: maxlimit["depth"+alpha+subdet+str(depth)][0] = maxval
-        if maxlimit["depth"+alpha+subdet+str(depth)][1] > leftbin: maxlimit["depth"+alpha+subdet+str(depth)][1] = leftbin
-        if maxlimit["depth"+alpha+subdet+str(depth)][2] < rightbin: maxlimit["depth"+alpha+subdet+str(depth)][2] = rightbin
-      hdepth[subdet][depth][alpha][runs[-1]].GetXaxis().SetRangeUser(maxlimit["depth"+alpha+subdet+str(depth)][1], maxlimit["depth"+alpha+subdet+str(depth)][2])
-      hdepth[subdet][depth][alpha][runs[-1]].GetYaxis().SetRangeUser(0, maxlimit["depth"+alpha+subdet+str(depth)][0]*1.3)
+        if maxlimit["depth"+alpha+subdet][0] < maxval: maxlimit["depth"+alpha+subdet][0] = maxval
+        if maxlimit["depth"+alpha+subdet][1] > leftbin: maxlimit["depth"+alpha+subdet][1] = leftbin
+        if maxlimit["depth"+alpha+subdet][2] < rightbin: maxlimit["depth"+alpha+subdet][2] = rightbin
+  for depth in depths:
+    for alpha in ["Mean", "RMS"]:
+      hdepth[subdet][depth][alpha][runs[-1]].GetXaxis().SetRangeUser(maxlimit["depth"+alpha+subdet][1], maxlimit["depth"+alpha+subdet][2])
+      hdepth[subdet][depth][alpha][runs[-1]].GetYaxis().SetRangeUser(0, maxlimit["depth"+alpha+subdet][0]*1.3)
 
 
 for alpha in ["Mean", "RMS"]:
@@ -232,8 +237,8 @@ for alpha in ["Mean", "RMS"]:
       legend[-1].Draw()
       i += 1
   c[-1].Draw()
-  c[-1].SaveAs(output+"Pedestal_"+alpha+".png")
-  c[-1].SaveAs(output+"Pedestal_"+alpha+".pdf")
+  c[-1].SaveAs(output+"PedestalPerSize_"+alpha+".png")
+  c[-1].SaveAs(output+"PedestalPerSize_"+alpha+".pdf")
 
   c.append(ROOT.TCanvas( 'c'+str(len(c)+1), 'c'+str(len(c)+1), 800, 800 ))
   c[-1].Divide(2,2)
