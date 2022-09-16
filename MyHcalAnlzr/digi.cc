@@ -291,9 +291,11 @@ int main(int argc, char *argv[])
         MeanofMeanPedVal[nh][nt].push_back(pedMean[nh][nt][n]->GetMean());
         RMSofMeanPedVal[nh][nt].push_back(pedMean[nh][nt][n]->GetRMS());
         MeanofRMSPedVal[nh][nt].push_back(pedRMS[nh][nt][n]->GetMean());
-        savefile << runid[n] << " " << lumi[n] << " " << days[n] << " " << floatday[n] << " " << nh << " " << nt << " MeanMean " << pedMean[nh][nt][n]->GetMean() << "\n";
-        savefile << runid[n] << " " << lumi[n] << " " << days[n] << " " << floatday[n] << " " << nh << " " << nt << " RMSMean " << pedMean[nh][nt][n]->GetRMS() << "\n";
-        savefile << runid[n] << " " << lumi[n] << " " << days[n] << " " << floatday[n] << " " << nh << " " << nt << " MeanRMS " << pedRMS[nh][nt][n]->GetMean() << "\n";
+        if(shunt!=-1.0){ // Only save for non-global runs
+          savefile << runid[n] << " " << lumi[n] << " " << days[n] << " " << floatday[n] << " " << nh << " " << nt << " MeanMean " << pedMean[nh][nt][n]->GetMean() << "\n";
+          savefile << runid[n] << " " << lumi[n] << " " << days[n] << " " << floatday[n] << " " << nh << " " << nt << " RMSMean " << pedMean[nh][nt][n]->GetRMS() << "\n";
+          savefile << runid[n] << " " << lumi[n] << " " << days[n] << " " << floatday[n] << " " << nh << " " << nt << " MeanRMS " << pedRMS[nh][nt][n]->GetMean() << "\n";
+        }
       }
     }
   }
