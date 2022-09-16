@@ -15,6 +15,7 @@
 #include <vector>
 #include <math.h>
 #include <assert.h> 
+#include <iomanip>
 
 using namespace std;
 
@@ -134,10 +135,10 @@ int main(int argc, char *argv[])
   //vector<string> runid = {"358338", "358430", "358488", "358543", "358595"};
 
   // #10:
-  vector<float> days = {69};
-  vector<float> lumi = {9.649};
-  vector<float> floatday = {12.09};
-  vector<string> runid = {"358663"};
+  vector<float> days = {69, 72};
+  vector<float> lumi = {9.649, 9.649};
+  vector<float> floatday = {12.09, 15.09};
+  vector<string> runid = {"358663", "358812"};
 
 
   /*reverse(days.begin(), days.end());
@@ -226,7 +227,7 @@ int main(int argc, char *argv[])
 
     if(find(runid.begin(), runid.end(), to_string((int)RunNum))==runid.end()) continue;
 
-    if(shunt!=6.0) continue;
+    if(shunt!=-1.0 and shunt!=6.0) continue; //-1.0 for global, 6.0 for local
 
     int runidx = distance(runid.begin(), find(runid.begin(), runid.end(), to_string((int)RunNum)) );
     int ietaidx = ieta<0?ieta+29:ieta+28;
@@ -247,8 +248,10 @@ int main(int argc, char *argv[])
   std::cout << "Postprocessing histograms..." << std::endl;
 
   TH3F* h3 = new TH3F("h3", "h3", 59, -29, 30, 72, 0, 72, 7, 1, 8);
-
+  ofstream tablefile;
   for(int n=0; n<nruns; n++){
+    tablefile.open("Table_Run"+runid[n]+".txt");
+    tablefile << setw(8) << "SiPM" << setw(8) << "ieta" << setw(8) << "iphi" << setw(8) << "depth" << setw(12) << "Mean" << setw(12) << "RMS" << "\n";
     for(int t=0; t<2; t++){
       for(int i=0; i<58; i++){
         for(int j=0; j<72; j++){
@@ -261,18 +264,15 @@ int main(int argc, char *argv[])
               pedRMS[nh][t][n]->Fill(histarray[n][t][i][j][k]->GetRMS());
               PEDMeanDepth[nh][k][n]->Fill(histarray[n][t][i][j][k]->GetMean());
               PEDRMSDepth[nh][k][n]->Fill(histarray[n][t][i][j][k]->GetRMS());
+              tablefile << setw(8) << (t==0?"Small":"Large") << setw(8) << (i<29?i-29:i-28) << setw(8) << j << setw(8) << k << setw(12) << pedMean[nh][t][n]->GetMean() << setw(12) << pedRMS[nh][t][n]->GetRMS() << "\n";
               if(t==1 && nh==0 && histarray[n][t][i][j][k]->GetMean() < 5.6) h3->Fill(i<29?i-29:i-28, j, k+1); // Large SiPM, HB, Small mean
             }
           }
         }
       }
     }
+    tablefile.close();
   }
-
-  //ofstream myfile;
-  //myfile.open ("meanRMS.txt");  
-  //myfile << "Mean = " << GetMean() << "RMS = " << GetRMS() <<endl;
-  //myfile.close();
 
   vector<float> MeanofMeanPedVal[2][2];
   vector<float> RMSofMeanPedVal[2][2];

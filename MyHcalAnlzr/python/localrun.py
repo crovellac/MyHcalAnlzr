@@ -25,7 +25,7 @@ process.source = cms.Source("HcalTBSource",
 	firstLuminosityBlockForEachRun = cms.untracked.VLuminosityBlockID([]),
 	fileNames = cms.untracked.vstring(
 		#"file:/eos/cms/store/group/dpg_hcal/comm_hcal/USC/run358080/USC_358080.root",
-		'file:/eos/cms/store/group/dpg_hcal/comm_hcal/USC/run' + RUN + '/USC_' + RUN + '.root' for RUN in ['358160', '358179', '358222', '358277', '358303']
+		'file:/eos/cms/store/group/dpg_hcal/comm_hcal/USC/run' + RUN + '/USC_' + RUN + '.root' for RUN in ['358663', '358812']
                 # Set 1: ['355079', '355538', '355573', '355669', '355710']
                 # Set 2: ['355776', '355838', '355882', '355947', '356016']
                 # Set 3: ['356115', '356457', '356538', '356590', '356646']
@@ -35,7 +35,7 @@ process.source = cms.Source("HcalTBSource",
                 # Set 7: ['357845', '357968', '357996', '358087', '358101']
                 # Set 8: ['358160', '358179', '358222', '358277', '358303']
                 # Set 9: ['358338', '358430', '358488', '358543', '358595']
-                # Set 10:['358663']
+                # Set 10:['358663', '358812']
         )
 )
 
@@ -63,7 +63,7 @@ process.MyHcalAnlzr = cms.EDAnalyzer('MyHcalAnlzr',
 )
 
 process.TFileService = cms.Service("TFileService",
-      fileName = cms.string("/eos/user/d/dmroy/HCAL/MyHcalAnlzr/output_LocalRuns_set8.root"),
+      fileName = cms.string("/eos/user/d/dmroy/HCAL/MyHcalAnlzr/output_LocalRuns_set10.root"),
       closeFileFast = cms.untracked.bool(True)
 )
 
