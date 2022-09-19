@@ -78,6 +78,8 @@ int main(int argc, char *argv[])
   // 66 = 09.09. (358595 / 9.649)
   // 69 = 12.09. (358663 / 9.649)
   // 72 = 15.09. (358812 / 9.649)
+  // 74 = 17.09. (358902 / 9.649)
+  // 75 = 18.09. (358928 / 9.649)
   // 87 = 30.09.
 
   // New files to process:
@@ -136,10 +138,10 @@ int main(int argc, char *argv[])
   //vector<string> runid = {"358338", "358430", "358488", "358543", "358595"};
 
   // #10:
-  vector<float> days = {69, 72};
-  vector<float> lumi = {9.649, 9.649};
-  vector<string> floatday = {"12.09", "15.09"};
-  vector<string> runid = {"358663", "358812"};
+  vector<float> days = {69, 72, 74, 75};
+  vector<float> lumi = {9.649, 9.649, 9.649, 9.649};
+  vector<string> floatday = {"12.09", "15.09", "17.09", "18.09"};
+  vector<string> runid = {"358663", "358812", "358902", "358928"};
 
   // Global:
   //vector<float> days = {42};
@@ -270,7 +272,7 @@ int main(int argc, char *argv[])
               pedRMS[nh][t][n]->Fill(histarray[n][t][i][j][k]->GetRMS());
               PEDMeanDepth[nh][k][n]->Fill(histarray[n][t][i][j][k]->GetMean());
               PEDRMSDepth[nh][k][n]->Fill(histarray[n][t][i][j][k]->GetRMS());
-              tablefile << setw(8) << (t==0?"Small":"Large") << setw(8) << (i<29?i-29:i-28) << setw(8) << (j+1) << setw(8) << k << setw(12) << pedMean[nh][t][n]->GetMean() << setw(12) << pedRMS[nh][t][n]->GetRMS() << "\n";
+              tablefile << setw(8) << (t==0?"Small":"Large") << setw(8) << (i<29?i-29:i-28) << setw(8) << (j+1) << setw(8) << (k+1) << setw(12) << pedMean[nh][t][n]->GetMean() << setw(12) << pedRMS[nh][t][n]->GetRMS() << "\n";
               if(t==1 && nh==0 && histarray[n][t][i][j][k]->GetMean() < 5.6) h3->Fill(i<29?i-29:i-28, j, k+1); // Large SiPM, HB, Small mean
             }
           }
