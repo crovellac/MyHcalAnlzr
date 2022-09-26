@@ -106,8 +106,9 @@ legend = []
 
 for title in grdict:
   c.append(ROOT.TCanvas( 'c'+str(len(c)+1), 'c'+str(len(c)+1), 800, 800 ))
+  c[-1].SetLeftMargin(0.12)
   c[-1].cd()
-  legend.append(ROOT.TLegend(0.1,0.8,0.9,0.9))
+  legend.append(ROOT.TLegend(0.12,0.8,0.9,0.9))
   legend[-1].SetNColumns(2)
   j=0
   alpha = grdict[title][0]
