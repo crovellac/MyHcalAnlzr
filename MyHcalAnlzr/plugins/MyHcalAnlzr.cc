@@ -41,6 +41,7 @@
 #include "DataFormats/HcalRecHit/interface/HcalRecHitCollections.h"
 #include "DataFormats/HcalRecHit/interface/CaloRecHitAuxSetter.h"
 #include "DataFormats/HcalRecHit/test/HcalRecHitDump.cc"
+#include "DataFormats/HcalDigi/interface/HcalQIESample.h"
 
 #include "DataFormats/EcalRecHit/interface/EcalRecHit.h"
 #include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
@@ -82,6 +83,7 @@ private:
   //edm::EDGetTokenT<HBHERecHitCollection> HBHERecHitToken_;
   edm::EDGetTokenT<QIE11DigiCollection> qie11digisToken_;
   edm::EDGetTokenT<QIE10DigiCollection> qie10digisToken_;
+  edm::EDGetTokenT<HODigiCollection> HOdigisToken_;
   //edm::EDGetTokenT<EEDigiCollection> eeDigiCollectionToken_;
   //edm::EDGetTokenT<EcalRecHitCollection> EERecHitCollectionT_;
 
@@ -98,14 +100,16 @@ private:
   //TNtuple* tup_rh;
   TNtuple* tup_qie;
   TNtuple* tup_qie10;
+  TNtuple* tup_HOdigi;
   //TNtuple* tup_ecal;
 
   TTree* evttree;
   std::vector<float> qieinfo;
   std::vector<std::vector<float>> qielist;
   std::vector<float> qie10info;
-  std::vector<std::vector<float>> qie10list;
-
+  std::vector<std::vector<float>> qie10list; 
+  std::vector<float> HOdigiinfo;
+  std::vector<std::vector<float>> HOdigilist;
 };
 
 //
@@ -123,6 +127,7 @@ MyHcalAnlzr::MyHcalAnlzr(const edm::ParameterSet& iConfig)
    :   //HBHERecHitToken_(consumes<HBHERecHitCollection>(iConfig.getUntrackedParameter<edm::InputTag>("tagRechit", edm::InputTag("hbheprereco")))),
        qie11digisToken_(consumes<QIE11DigiCollection>(iConfig.getUntrackedParameter<edm::InputTag>("tagQIE11", edm::InputTag("hcalDigis")))),
        qie10digisToken_(consumes<QIE10DigiCollection>(iConfig.getUntrackedParameter<edm::InputTag>("tagQIE10", edm::InputTag("hcalDigis")))),
+       HOdigisToken_(consumes<HODigiCollection>(iConfig.getUntrackedParameter<edm::InputTag>("tagHO", edm::InputTag("hcalDigis")))),
        //eeDigiCollectionToken_(consumes<EEDigiCollection>(iConfig.getParameter<edm::InputTag>("EEdigiCollection"))),
        //EERecHitCollectionT_(consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("EERecHitCollection"))),
        runtype_(iConfig.getUntrackedParameter<string>("runtype"))
@@ -139,6 +144,7 @@ MyHcalAnlzr::MyHcalAnlzr(const edm::ParameterSet& iConfig)
   //tup_rh = fs->make<TNtuple>("rechit", "rechit", "RunNum:LumiNum:EvtNum:Energy:Time:TDC0:TDC1:TDC2:TDC3:TDC4:IEta:IPhi:Depth");
   tup_qie= fs->make<TNtuple>("qiedigi", "qiedigi", "RunNum:LumiNum:EvtNum:ieta:iphi:depth:sumADC:type:shunt");
   tup_qie10= fs->make<TNtuple>("qiedigi10", "qiedigi10", "RunNum:LumiNum:EvtNum:ieta:iphi:depth:sumADC:type:shunt");
+  tup_HOdigi= fs->make<TNtuple>("HOdigi", "HOdigi", "RunNum:LumiNum:EvtNum:ieta:iphi:depth:sumADC:type:shunt");
   //tup_ecal=fs->make<TNtuple>("eedigi", "eedigi", "ADC0:ADC1:ADC2:ADC3:ADC4:ADC5:ADC6:ADC7:ADC8:ADC9:e_eerec:ix:iy:iz");
 
   //evttree = fs->make<TTree>("evttree", "evttree");
@@ -189,12 +195,14 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   //edm::Handle<HBHERecHitCollection> hcalRecHits;
   edm::Handle<QIE11DigiCollection> qie11Digis;
   edm::Handle<QIE10DigiCollection> qie10Digis;
+  edm::Handle<HODigiCollection> HODigis;
   //edm::Handle<EEDigiCollection> pEEDigis;
   //edm::Handle<EcalRecHitCollection> EERecHits;
 
   //bool gotRecHits = iEvent.getByToken(HBHERecHitToken_, hcalRecHits);
   bool gotQIE11Digis = iEvent.getByToken(qie11digisToken_, qie11Digis);
   bool gotQIE10Digis = iEvent.getByToken(qie10digisToken_, qie10Digis);
+  bool gotHODigis = iEvent.getByToken(HOdigisToken_, HODigis);
   //bool gotEEDigis = iEvent.getByToken(eeDigiCollectionToken_, pEEDigis);
   //bool gotEERecHits = iEvent.getByToken(EERecHitCollectionT_, EERecHits);
 
@@ -204,6 +212,8 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     std::cout << "Could not find HCAL QIE11Digis with tag: qie11Digis" << std::endl;
   if (!gotQIE10Digis)
     std::cout << "Could not find HCAL QIE10Digis with tag: qie10Digis" << std::endl;
+  if (!gotHODigis)
+    std::cout << "Could not find HCAL HODigis with tag: HODigis" << std::endl;
   //if (!gotEEDigis)
     //std::cout << "Could not find ECAL EEDigis with tag: EEdigiCollection" << std::endl;
   //if (!gotEERecHits)
@@ -325,7 +335,33 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     //qieinfo={};
     //evttree->Fill();
   }
+/////////////////////////////////
+// Hcal HODigis
+/////////////////////////////////
+  HOdigiinfo.clear();
+  HOdigilist.clear();
+  for (HODigiCollection::const_iterator it = HODigis->begin(); it != HODigis->end(); ++it) {
+    const HODataFrame HODigis = static_cast<const HODataFrame>(*it);
+    
 
+    //  Explicit check on the DetIds present in the Collection
+    //HcalDetId didHO = HODigis.id();
+    HcalDetId const& didHO = HODigis.id();
+    if(!(didHO.subdet() == HcalOuter)) continue;
+    int type = conditions->getHcalSiPMParameter(didHO)->getType();
+
+    int ADC_=0;
+    //for(int i=0; i<HODigis.HcalQIESample(); i++){
+    //  ADC_ += HODigis[i].adc();
+    //}
+
+    float varsHO[9] = {(float) runid, (float) lumiid, (float) eventid,(float) didHO.ieta(), (float) didHO.iphi(), (float) didHO.depth(), (float) ADC_, (float) type, shunt};
+
+    tup_HOdigi->Fill(varsHO);
+
+    //qieinfo={};
+    //evttree->Fill();
+  }
 
 }
 
