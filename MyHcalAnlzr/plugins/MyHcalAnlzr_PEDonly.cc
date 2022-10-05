@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    HcalDPG/MyHcalAnlzr
-// Class:      MyHcalAnlzr
+// Package:    HcalDPG/MyHcalAnlzr_PEDonly
+// Class:      MyHcalAnlzr_PEDonly
 //
-/**\class MyHcalAnlzr MyHcalAnlzr.cc HcalDPG/MyHcalAnlzr/plugins/MyHcalAnlzr.cc
+/**\class MyHcalAnlzr_PEDonly MyHcalAnlzr_PEDonly.cc HcalDPG/MyHcalAnlzr_PEDonly/plugins/MyHcalAnlzr_PEDonly.cc
 
  Description: [one line class summary]
 
@@ -68,10 +68,10 @@
 // from  edm::one::EDAnalyzer<>
 // This will improve performance in multithreaded jobs.
 
-class MyHcalAnlzr : public edm::one::EDAnalyzer<edm::one::SharedResources> {
+class MyHcalAnlzr_PEDonly : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 public:
-  explicit MyHcalAnlzr(const edm::ParameterSet&);
-  ~MyHcalAnlzr();
+  explicit MyHcalAnlzr_PEDonly(const edm::ParameterSet&);
+  ~MyHcalAnlzr_PEDonly();
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -119,7 +119,7 @@ private:
 //
 // constructors and destructor
 //
-MyHcalAnlzr::MyHcalAnlzr(const edm::ParameterSet& iConfig)
+MyHcalAnlzr_PEDonly::MyHcalAnlzr_PEDonly(const edm::ParameterSet& iConfig)
    :   //HBHERecHitToken_(consumes<HBHERecHitCollection>(iConfig.getUntrackedParameter<edm::InputTag>("tagRechit", edm::InputTag("hbheprereco")))),
        qie11digisToken_(consumes<QIE11DigiCollection>(iConfig.getUntrackedParameter<edm::InputTag>("tagQIE11", edm::InputTag("hcalDigis")))),
        qie10digisToken_(consumes<QIE10DigiCollection>(iConfig.getUntrackedParameter<edm::InputTag>("tagQIE10", edm::InputTag("hcalDigis")))),
@@ -147,7 +147,7 @@ MyHcalAnlzr::MyHcalAnlzr(const edm::ParameterSet& iConfig)
 
 }
 
-MyHcalAnlzr::~MyHcalAnlzr() {
+MyHcalAnlzr_PEDonly::~MyHcalAnlzr_PEDonly() {
   // do anything here that needs to be done at desctruction time
   // (e.g. close files, deallocate resources etc.)
   //
@@ -159,7 +159,7 @@ MyHcalAnlzr::~MyHcalAnlzr() {
 //
 
 // ------------ method called for each event  ------------
-void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void MyHcalAnlzr_PEDonly::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   using namespace edm;
 
 #ifdef THIS_IS_AN_EVENTSETUP_EXAMPLE
@@ -179,7 +179,7 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   long lumiid  = iEvent.id().luminosityBlock();
 
   
-  float shunt = -1;
+  float shunt = 6; // For local PED runs only
   //if(runtype_=="Local"){
   //  if(eventid > 1000 && eventid < 2000) shunt = 6; // HBHE, Gsel1
   //  else if(eventid > 4000 && eventid < 5000) shunt = 1; // HBHE, Gsel0
@@ -259,9 +259,6 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 /////////////////////////////////
 // Hcal QIE11Digis
 /////////////////////////////////
-  if (runtype_=="Global" || (runtype_=="Local" && ((eventid > 1000 && eventid < 2000) || (eventid > 4000 && eventid < 5000)))){ // HBHE in combined health check
-  if(eventid > 1000 && eventid < 2000) shunt = 6; // HBHE, Gsel1
-  else if(eventid > 4000 && eventid < 5000) shunt = 1; // HBHE, Gsel0
   //qieinfo.clear();
   //qielist.clear();
   for (QIE11DigiCollection::const_iterator it = qie11Digis->begin(); it != qie11Digis->end(); ++it) {
@@ -301,14 +298,11 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     //qieinfo={};
     //evttree->Fill();
   }
-  }
 
 
 /////////////////////////////////
 // Hcal QIE10Digis
 /////////////////////////////////
-  if (runtype_=="Global" || (runtype_=="Local" && (eventid > 6000 && eventid < 11000))){ // HF in combined health check
-  shunt = 6; // HF, Gsel1
   //qie10info.clear();
   //qie10list.clear();
   for (QIE10DigiCollection::const_iterator it = qie10Digis->begin(); it != qie10Digis->end(); ++it) {
@@ -333,13 +327,11 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     //qieinfo={};
     //evttree->Fill();
   }
-  }
 
 
 /////////////////////////////////
 // Hcal HODigis
 /////////////////////////////////
-  if (runtype_=="Global") { // No HO in combined health check
   //HOdigiinfo.clear();
   //HOdigilist.clear();
   for (HODigiCollection::const_iterator it = HODigis->begin(); it != HODigis->end(); ++it) {
@@ -364,23 +356,22 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     //qieinfo={};
     //evttree->Fill();
   }
-  }
 
 
 }
 
 // ------------ method called once each job just before starting event loop  ------------
-void MyHcalAnlzr::beginJob() {
+void MyHcalAnlzr_PEDonly::beginJob() {
   // please remove this method if not needed
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void MyHcalAnlzr::endJob() {
+void MyHcalAnlzr_PEDonly::endJob() {
   // please remove this method if not needed
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
-void MyHcalAnlzr::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+void MyHcalAnlzr_PEDonly::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -395,4 +386,4 @@ void MyHcalAnlzr::fillDescriptions(edm::ConfigurationDescriptions& descriptions)
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(MyHcalAnlzr);
+DEFINE_FWK_MODULE(MyHcalAnlzr_PEDonly);

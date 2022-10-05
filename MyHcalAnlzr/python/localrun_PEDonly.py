@@ -25,20 +25,9 @@ process.source = cms.Source("HcalTBSource",
 	firstLuminosityBlockForEachRun = cms.untracked.VLuminosityBlockID([]),
 	fileNames = cms.untracked.vstring(
 		#"file:/eos/cms/store/group/dpg_hcal/comm_hcal/USC/run358080/USC_358080.root",
-		'file:/eos/cms/store/group/dpg_hcal/comm_hcal/USC/run' + RUN + '/USC_' + RUN + '.root' for RUN in ['359730', '359767', '359822']
-                # Set 1: ['355079', '355538', '355573', '355669', '355710']
-                # Set 2: ['355776', '355838', '355882', '355947', '356016']
-                # Set 3: ['356115', '356457', '356538', '356590', '356646']
-                # Set 4: ['356829', '356926', '356958', '357008', '357142']
-                # Set 5: ['357287', '357337', '357415', '357456', '357501']
-                # Set 6: ['357564', '357622', '357646', '357743', '357787']
-                # Set 7: ['357845', '357968', '357996', '358087', '358101']
-                # Set 8: ['358160', '358179', '358222', '358277', '358303']
-                # Set 9: ['358338', '358430', '358488', '358543', '358595']
-                # Set 10:['358663', '358812', '358902', '358928', '358997']
-                # Set 11:['359026', '359092', '359168', '359236', '359299']
-                # Set 12:['359378', '359483', '359549', '359652', '359703']
-                # Set 13:['359730', '359767', '359822']
+		'file:/eos/cms/store/group/dpg_hcal/comm_hcal/USC/run' + RUN + '/USC_' + RUN + '.root' for RUN in ['359707', '359735', '359772', '359827']
+                # Set 1: ['359309', '359382', '359489', '359554', '359656']
+                # Set 2: ['359707', '359735', '359772', '359827']
         )
 )
 
@@ -56,7 +45,7 @@ process.options.numberOfStreams=cms.untracked.uint32(0)
 process.options.numberOfConcurrentLuminosityBlocks=cms.untracked.uint32(1)
 
 
-process.MyHcalAnlzr = cms.EDAnalyzer('MyHcalAnlzr',
+process.MyHcalAnlzr = cms.EDAnalyzer('MyHcalAnlzr_PEDonly',
 #        tagRecHit = cms.untracked.InputTag("hbheprereco"),
 #	tagQIE11 = cms.InputTag("simHcalDigis", "HBHEQIE11DigiCollection")
 	tagQIE11 = cms.untracked.InputTag("hcalDigis"),
@@ -66,7 +55,7 @@ process.MyHcalAnlzr = cms.EDAnalyzer('MyHcalAnlzr',
 )
 
 process.TFileService = cms.Service("TFileService",
-      fileName = cms.string("/eos/user/d/dmroy/HCAL/MyHcalAnlzr/output_LocalRuns_set13.root"),
+      fileName = cms.string("/eos/user/d/dmroy/HCAL/MyHcalAnlzr/output_LocalRuns_PEDonly_set2.root"),
       closeFileFast = cms.untracked.bool(True)
 )
 
