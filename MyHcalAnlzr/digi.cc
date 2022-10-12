@@ -334,10 +334,16 @@ int main(int argc, char *argv[])
 
     //std::cout << runidx << ", " << sipmidx << ", " << ietaidx << ", " << iphiidx << ", " << depthidx << std::endl;
 
-    histarray[runidx][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/8.0); // Average ADC of all 8 TSs
- 
-
-  }
+    for(int nh=0; nh<4; nh++){ // Average ADC of all TSs for HB, HE, HF and HO
+      if (nh==0) det = "HB";
+      else if (nh==1) det = "HE";
+      histarray[runidx][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/8.0); // Average ADC of all 8 TSs, HBHE
+      if (nh==2) det = "HF"
+      histarray[runidx][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/6.0); // Average ADC of all 6 TSs, HF
+    if  nh==3 det = "HO";
+    histarray[runidx][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/10.0); // Average ADC of all 10 TSs, HO
+ }
+}
 
 
   std::cout << "Postprocessing histograms..." << std::endl;
