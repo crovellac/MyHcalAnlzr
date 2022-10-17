@@ -93,7 +93,18 @@ int main(int argc, char *argv[])
   // 89 = 02.10. (359703 / 10.791) (PED: 359707)
   // 90 = 03.10. (359730 / 10.996) (PED: 359735)
   // 91 = 04.10. (359767 / 11.836) (PED: 359772)
-  // 92 = 05.10. (3x / 12.234) (PED: 3x)
+  // 92 = 05.10. (359822 / 12.234) (PED: 359827)
+  // 93 = 06.10. (359892 / 12.346) (PED: 359912)
+  // 94 = 07.10. (359954 / 12.346) (PED: 359967)
+  // 95 = 08.10. (360006 / 12.901) (PED: 360010)
+  // 96 = 09.10. (360040 / 13.363) (PED: 360043)
+  // 97 = 10.10. (360096 / 13.952) (PED: 360102)
+  // 98 = 11.10. (360144 / 14.821) (PED: 360145)
+  // 99 = 12.10. (360242 / 15.048) (PED: 360244)
+  // 100 = 13.10. (360302 / 15.653) (PED: 360310)
+  // 101 = 14.10. (360362 / 15.810) (PED: 360363)
+  // 102 = 15.10. (360417 / 15.965) (PED: 360419)
+  // 103 = 16.10. (360463 / 16.907) (PED: 360468)
 
   // New files to process:
   // #1:
@@ -163,16 +174,28 @@ int main(int argc, char *argv[])
   //vector<string> runid = {"359026", "359092", "359168", "359236", "359299"};
 
   // #12:
-  vector<float> days = {84, 85, 86, 87, 89};
-  vector<float> lumi = {9.654, 9.654, 9.654, 9.702, 10.791};
-  vector<string> floatday = {"27.09", "28.09", "29.09", "30.09", "02.10"};
-  vector<string> runid = {"359378", "359483", "359549", "359652", "359703"};
+  //vector<float> days = {84, 85, 86, 87, 89};
+  //vector<float> lumi = {9.654, 9.654, 9.654, 9.702, 10.791};
+  //vector<string> floatday = {"27.09", "28.09", "29.09", "30.09", "02.10"};
+  //vector<string> runid = {"359378", "359483", "359549", "359652", "359703"};
 
   // #13:
-  //vector<float> days = {90, 91, 92};
-  //vector<float> lumi = {10.996, 11.836, 12.234};
-  //vector<string> floatday = {"03.10", "04.10", "05.10"};
-  //vector<string> runid = {"359730", "359767", "359822"};
+  //vector<float> days = {90, 91, 92, 93, 94};
+  //vector<float> lumi = {10.996, 11.836, 12.234, 12.346, 12.346};
+  //vector<string> floatday = {"03.10", "04.10", "05.10", "06.10", "07.10"};
+  //vector<string> runid = {"359730", "359767", "359822", "359892", "359954"};
+
+  // #14:
+  //vector<float> days = {95, 96, 97, 98, 99};
+  //vector<float> lumi = {12.901, 13.363, 13.952, 14.821, 15.048};
+  //vector<string> floatday = {"08.10", "09.10", "10.10", "11.10", "12.10"};
+  //vector<string> runid = {"360006", "360040", "360096", "360144", "360242"};
+
+  // #15:
+  //vector<float> days = {100, 101, 102, 103};
+  //vector<float> lumi = {15.653, 15.810, 15.965, 16.907};
+  //vector<string> floatday = {"13.10", "14.10", "15.10", "16.10"};
+  //vector<string> runid = {"360302", "360362", "360417", "360463"};
 
 
   // PEDonly #1:
@@ -182,10 +205,22 @@ int main(int argc, char *argv[])
   //vector<string> runid = {"359309", "359382", "359489", "359554", "359656"};
 
   // PEDonly #2:
-  //vector<float> days = {89, 90, 91, 92};
-  //vector<float> lumi = {10.791, 10.996, 11.836, 12.234};
-  //vector<string> floatday = {"02.10", "03.10", "04.10", "05.10"};
-  //vector<string> runid = {"359707", "359735", "359772", "359827"};
+  //vector<float> days = {89, 90, 91, 92, 93};
+  //vector<float> lumi = {10.791, 10.996, 11.836, 12.234, 12.346};
+  //vector<string> floatday = {"02.10", "03.10", "04.10", "05.10", "06.10"};
+  //vector<string> runid = {"359707", "359735", "359772", "359827", "359912"};
+
+  // PEDonly #3:
+  //vector<float> days = {94, 95, 96, 97, 98};
+  //vector<float> lumi = {12.346, 12.901, 13.363, 13.952, 14.821};
+  //vector<string> floatday = {"07.10", "08.10", "09.10", "10.10", "11.10"};
+  //vector<string> runid = {"359967", "360010", "360043", "360102", "360145"};
+
+  // PEDonly #4:
+  vector<float> days = {99, 100, 101, 102, 103};
+  vector<float> lumi = {15.048, 15.653, 15.810, 15.965, 16.907};
+  vector<string> floatday = {"12.10", "13.10", "14.10", "15.10", "16.10"};
+  vector<string> runid = {"360244", "360310", "360363", "360419", "360468"};
 
 
   // Global:
@@ -334,16 +369,15 @@ int main(int argc, char *argv[])
 
     //std::cout << runidx << ", " << sipmidx << ", " << ietaidx << ", " << iphiidx << ", " << depthidx << std::endl;
 
-    for(int nh=0; nh<4; nh++){ // Average ADC of all TSs for HB, HE, HF and HO
-      if (nh==0) det = "HB";
-      else if (nh==1) det = "HE";
+    if (type==3 || type==4 || type==5 || type==6){
       histarray[runidx][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/8.0); // Average ADC of all 8 TSs, HBHE
-      if (nh==2) det = "HF"
+    }else if (!(i>=26 && i<=55)){
       histarray[runidx][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/6.0); // Average ADC of all 6 TSs, HF
-    if  nh==3 det = "HO";
-    histarray[runidx][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/10.0); // Average ADC of all 10 TSs, HO
- }
-}
+    }else{
+      histarray[runidx][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/10.0); // Average ADC of all 10 TSs, HO
+    }
+
+  }
 
 
   std::cout << "Postprocessing histograms..." << std::endl;
@@ -405,8 +439,10 @@ int main(int argc, char *argv[])
                   //std::cout << n << ", " << t2 << ", " << i << ", " << j << ", " << k << std::endl;
                   if(histarray[n][t2][i][j][k]->GetEntries()>0){
                     if ((t==3 && (j>33 && j<38)) || (t==4 && (j<2 || j>69))){ // iphi's 35-38 and 71,72,1,2
+                      if (t2!=0) { // Do only large SiPMs for now -> Small and Large shouldn't mix, make the separate later (TODO).
                       pedMean[nh][t][n]->Fill(histarray[n][t2][i][j][k]->GetMean());
                       pedRMS[nh][t][n]->Fill(histarray[n][t2][i][j][k]->GetRMS());
+                      }
                     }
                     if ((t==3 && (j>33 && j<38)) || (t==4 && (j>9 && j<13))){ // iphi's 35-38 and 11-14
                       PEDMeanPhi[nh][t2][t-3][n]->Fill(histarray[n][t2][i][j][k]->GetMean());
