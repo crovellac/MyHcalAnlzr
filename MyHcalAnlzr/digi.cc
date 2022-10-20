@@ -371,7 +371,7 @@ int main(int argc, char *argv[])
 
     if (type==3 || type==4 || type==5 || type==6){
       histarray[runidx][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/8.0); // Average ADC of all 8 TSs, HBHE
-    }else if (!(i>=26 && i<=55)){
+    }else if (!(ietaidx>=26 && ietaidx<=55)){
       histarray[runidx][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/6.0); // Average ADC of all 6 TSs, HF
     }else{
       histarray[runidx][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/10.0); // Average ADC of all 10 TSs, HO
