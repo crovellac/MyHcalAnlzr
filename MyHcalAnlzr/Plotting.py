@@ -84,63 +84,6 @@ def MakeGraph(values, trendtype, meanrms, what): # what in ["daysince", "lumi"]
   gr = ROOT.TGraph(len(x), array('d', x), array('d', y))
   return gr
 
-
-def GetFullGraph(subdet, alpha, beta, size, what): # what in ["daysince", "lumi", "floatday"]
-  #subd = 0 if subdet=="HB" else 1
-  if subdet=="HB": subd = 0
-  elif subdet=="HE": subd = 1
-  elif subdet=="HF": subd = 2
-  elif subdet=="HO": subd = 3
-  if what=="daysince": xval = 2
-  elif what=="lumi": xval = 1
-  elif what=="floatday": xval = 3
-  vals = {}
-  with open('SaveFile.txt') as savefile:
-    lines = [line.rstrip() for line in savefile]
-  if lines != sorted(lines): # Sort file
-    print("Going to sort")
-    os.system('mv SaveFile.txt SaveFile.txt_old')
-    # First remove duplicate entries with different result: Save newer one
-    lines2 = []
-    contains = []
-    for l in lines:
-      category = l.split()[:-1]
-      if category not in contains:
-        contains.append(category)
-      else:
-        delme=""
-        for k in lines2:
-          if k.split()[:-1]==category and k!=l:
-            delme=k
-            break
-        if delme!="":
-          lines2.remove(delme)
-          #print('Going to replace "',delme,'" with "',l,'"')
-      lines2.append(l)
-    lastline = ""
-    with open('SaveFile.txt', 'w') as savefile:
-      for l in sorted(lines2):
-        if l==lastline: continue # Remove exact duplicates
-        if l.split()[-1] == "0": continue # Ignore empty entries
-        savefile.write(l+"\n")
-        lastline = l
-    
-  # Content per line:
-  # Run, Lumi, Day since 5th July, Day as float, 0/1 for HB/HE, 0/1 for Small/Large, Mean/RMS, Value
-  for l in lines:
-    stuff = l.split(" ")
-    if stuff[4]==str(subd) and stuff[5]==str(size) and stuff[6]==alpha+beta:
-      vals[float(stuff[xval])] = float(stuff[7])
-
-  x = []
-  y = []
-  for key, value in sorted(vals.items()):
-    x.append(key)
-    y.append(value)
-  if len(x)==0: return None
-  gr = ROOT.TGraph(len(x), array('d', x), array('d', y))
-  return gr
-
 def GetDay(run):
   with open('SaveFile.txt') as savefile:
     lines = [line.rstrip() for line in savefile]
@@ -159,6 +102,21 @@ def MinMaxAxis(minv, maxv, mindist):
     thismin = thismax*0.2/1.2
   return thismin, thismax
 
+def MakeExtrapolation(gr, trend):
+  N = gr[trend]["MeanMean"].GetN()
+  x = []
+  y = []
+  e = []
+  for i in range(N):
+    x.append(gr[trend]["MeanMean"].GetPointX(i))
+    y.append(gr[trend]["MeanMean"].GetPointY(i))
+    y[-1] += 2*gr[trend]["MeanRMS"].GetPointY(i)
+    y[-1] += 2*gr[trend]["RMSMean"].GetPointY(i)
+    y[-1] += 2*gr[trend]["RMSRMS"].GetPointY(i)
+    e.append(N-i)
+  gr = ROOT.TGraph(len(x), array('d', x), array('d', y))
+  grerr = ROOT.TGraphErrors(len(x), array('d', x), array('d', y), array('d', e), array('d', e))
+  return gr, grerr
 
 
 ##### Start
@@ -284,9 +242,9 @@ for title in grdict:
     if subdet in ["HB", "HE"]:
       if "Small" in part: sizename = "Small SiPM"
       elif "Large" in part: sizename = "Large SiPM"
-      if "phi,35," in part: sizename += ", iphi in [35,36,37,38]" 
-      elif "phi,11," in part: sizename += ", iphi in [11,12,13,14]" 
-      elif "phi,1," in part: sizename += ", iphi in [1,2,71,72]" 
+      if "phi,36," in part: sizename += ", iphi in [36,37]" 
+      elif "phi,12," in part: sizename += ", iphi in [12,13]" 
+      elif "phi,1," in part: sizename += ", iphi in [72,1]" 
     label = subdet + " " + sizename + ""
     legend[-1].AddEntry(gr[part][meanrms], label, "pl")
   legend[-1].Draw()
@@ -377,7 +335,7 @@ for subdet in ["HB", "HE"]:
 
   for size in ["Small", "Large"]:
     hphi[subdet][size] = {}
-    for phi in [",35,36,37,38", ",11,12,13,14"]: # horizonal and vertical
+    for phi in [",36,37", ",12,13"]: # horizonal and vertical
       hphi[subdet][size][phi] = {}
       for alpha in ["Mean", "RMS"]:
         if "phi"+alpha+subdet not in maxlimit: maxlimit["phi"+alpha+subdet] = [0, 999, 0]
@@ -391,7 +349,7 @@ for subdet in ["HB", "HE"]:
           if maxlimit["phi"+alpha+subdet][1] > leftbin: maxlimit["phi"+alpha+subdet][1] = leftbin
           if maxlimit["phi"+alpha+subdet][2] < rightbin: maxlimit["phi"+alpha+subdet][2] = rightbin
   for size in ["Small", "Large"]:
-    for phi in [",35,36,37,38", ",11,12,13,14"]:
+    for phi in [",36,37", ",12,13"]:
       for alpha in ["Mean", "RMS"]:
         hphi[subdet][size][phi][alpha][runs[-1]].GetXaxis().SetRangeUser(maxlimit["phi"+alpha+subdet][1], maxlimit["phi"+alpha+subdet][2])
         hphi[subdet][size][phi][alpha][runs[-1]].GetYaxis().SetRangeUser(0, maxlimit["phi"+alpha+subdet][0]*1.3)
@@ -407,8 +365,7 @@ for alpha in ["Mean", "RMS"]:
       c[-1].cd(i)
       for j,run in enumerate(reversed(runs)):
         h[subdet][size][alpha][run].SetLineColor(j+1)
-        sizename = "Large" if size==1 else "Small"
-        label = subdet + " " + sizename + " SiPM Pedestal "+alpha
+        label = subdet + " " + size + " SiPM Pedestal "+alpha
         if j==0:
           h[subdet][size][alpha][run].GetXaxis().SetTitle("Pedestal "+alpha+" (QIE11 ADC)")
           h[subdet][size][alpha][run].SetTitle(label)
@@ -466,13 +423,12 @@ for alpha in ["Mean", "RMS"]:
     c[-1].Divide(2,2)
     i=1
     for size in ["Small", "Large"]:
-      for phi in [",35,36,37,38", ",11,12,13,14"]:
+      for phi in [",36,37", ",12,13"]:
         c[-1].cd(i)
         for j,run in enumerate(reversed(runs)):
           hphi[subdet][size][phi][alpha][run].SetLineColor(j+1)
-          sizename = "Large" if size==1 else "Small"
-          phirange = "for iphi in [35,36,37,38] " if "35" in phi else "for iphi in [11,12,13,14] "
-          label = subdet + " " + sizename + " SiPM Pedestal " + phirange +alpha
+          phirange = "for iphi in [36,37] " if "36" in phi else "for iphi in [12,13] "
+          label = subdet + " " + size + " SiPM Pedestal " + phirange +alpha
           if j==0:
             hphi[subdet][size][phi][alpha][run].GetXaxis().SetTitle("Pedestal "+alpha+" (QIE11 ADC)")
             hphi[subdet][size][phi][alpha][run].SetTitle(label)
@@ -488,3 +444,63 @@ for alpha in ["Mean", "RMS"]:
     c[-1].Draw()
     c[-1].SaveAs(output+"PedestalPerPhi_"+alpha+"_"+subdet+".png")
     c[-1].SaveAs(output+"PedestalPerPhi_"+alpha+"_"+subdet+".pdf")
+
+# Extrapolation plots (makes more sense for lumi)
+if dowhat=="lumi":
+  exhists = []
+  for trend in ["HB_sipmLarge", "HB_sipmSmall", "HE_sipmLarge", "HE_sipmSmall", "HF", "HO", "HB_sipmLarge_phi,1,72", "HB_sipmLarge_phi,36,37"]:
+    exhists.append(None)
+    exhists[-1], exhistserror = MakeExtrapolation(gr, trend)
+    maxx = 1.5*exhists[-1].GetPointX(exhists[-1].GetN()-1)
+    #fit = ROOT.TF1( 'fit', "[0]+[1]*x+[2]*x*x", exhists[-1].GetPointX(0), exhists[-1].GetPointX(exhists[-1].GetN()-1))
+    fit = ROOT.TF1( 'fit', "[0]+[1]*x", exhists[-1].GetPointX(0), maxx)
+    exhistserror.Fit("fit", "F")
+
+    if "HB" in trend: color = ROOT.kBlue
+    elif "HE" in trend: color = ROOT.kGreen
+    elif "HF" in trend: color = ROOT.kRed
+    elif "HO" in trend: color = ROOT.kBlack
+    exhists[-1].SetLineColor(color)
+    exhists[-1].SetLineStyle(1)
+    exhists[-1].SetMarkerStyle(21)
+    exhists[-1].SetMarkerColor(color)
+    exhists[-1].SetTitle("Extrapolation for "+trend)
+    exhists[-1].GetXaxis().SetTitle(xtitle)
+    exhists[-1].GetXaxis().SetDecimals()
+    exhists[-1].GetXaxis().SetLimits(exhists[-1].GetPointX(0), maxx)
+    if subdet=="HF": ytitle = "ADC (QIE10)"
+    elif subdet=="HO": ytitle = "ADC (QIE8)"
+    else: ytitle = "ADC (QIE11)"
+    exhists[-1].GetYaxis().SetTitle(ytitle)
+    thismin = ROOT.TMath.MinElement(exhists[-1].GetN(), exhists[-1].GetY())
+    thismax = max(ROOT.TMath.MaxElement(exhists[-1].GetN(), exhists[-1].GetY()), fit.Eval(maxx))
+    exhists[-1].SetMinimum(thismin - (thismax-thismin)*0.2)
+    exhists[-1].SetMaximum(thismax + (thismax-thismin)*0.3)
+
+    c.append(ROOT.TCanvas( 'c'+str(len(c)+1), 'c'+str(len(c)+1), 600, 600 ))
+    c[-1].cd()
+    exhists[-1].Draw()
+    c[-1].Draw()
+    fit.Draw("SAME")
+    legend.append(ROOT.TLegend(0.1,0.8,0.9,0.9))
+    legend[-1].AddEntry(exhists[-1],"#mu_{#mu} + 2*#mu_{#sigma} + 2*#sigma_{#mu} + 2*#sigma_{#sigma}","pl")
+    legend[-1].AddEntry(fit,"Linear fit (weighted towards recent data)","l")
+    legend[-1].Draw()
+
+    # Now draw hori/vert lines at every ADC count beyond current measurments
+    lines = []
+    for alpha in range(int(exhists[-1].GetPointY(exhists[-1].GetN()-1))+1, int(fit.Eval(maxx))+1):
+      XatY = fit.GetX(alpha)
+      lines.append(ROOT.TLine(exhists[-1].GetPointX(0), alpha, XatY, alpha))
+      lines.append(ROOT.TLine(XatY, thismin - (thismax-thismin)*0.2, XatY, alpha))
+      lines[-2].SetLineColor(ROOT.kRed)
+      lines[-1].SetLineColor(ROOT.kRed)
+      lines[-2].Draw("SAME")
+      lines[-1].Draw("SAME")
+
+    c[-1].SaveAs(output+"Extrapolation_"+trend+".png")
+    c[-1].SaveAs(output+"Extrapolation_"+trend+".pdf")
+    del exhistserror
+    del fit
+
+exit()
