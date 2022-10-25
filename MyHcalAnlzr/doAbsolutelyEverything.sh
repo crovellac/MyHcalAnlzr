@@ -76,5 +76,8 @@
 #source doEverything.sh 360463 360468 103 16.907 16.10
 #source doEverything.sh 360765 360770 106 17.466 19.10
 #source doEverything.sh 360801 360805 107 18.026 20.10
-source doEverything.sh 360840 360843 108 18.515 21.10
-
+#source doEverything.sh 360840 360843 108 18.515 21.10
+#source doEverything.sh 360898 360904 109 19.186 22.10
+#source doEverything.sh 360931 360934 110 20.140 23.10
+#source doEverything.sh 360954 360957 111 20.878 24.10
+source doEverything.sh 361064 361069 112 21.548 25.10

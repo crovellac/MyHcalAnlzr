@@ -311,6 +311,11 @@ for subdet in ["HB", "HE"]:
         if maxlimit[alpha+subdet][2] < rightbin: maxlimit[alpha+subdet][2] = rightbin
   for size in ["Small", "Large"]: 
     for alpha in ["Mean", "RMS"]:
+      rebin = int((maxlimit[alpha+subdet][2]-maxlimit[alpha+subdet][1])*100/50) # Default 100 bin per ADC count. Rebin to ~50 total
+      if rebin > 1:
+        if size=="Small": maxlimit[alpha+subdet][0] = maxlimit[alpha+subdet][0] * rebin
+        for run in runs:
+          h[subdet][size][alpha][run].Rebin(rebin)
       h[subdet][size][alpha][runs[-1]].GetXaxis().SetRangeUser(maxlimit[alpha+subdet][1], maxlimit[alpha+subdet][2])
       h[subdet][size][alpha][runs[-1]].GetYaxis().SetRangeUser(0, maxlimit[alpha+subdet][0]*1.3)
 
@@ -330,6 +335,11 @@ for subdet in ["HB", "HE"]:
         if maxlimit["depth"+alpha+subdet][2] < rightbin: maxlimit["depth"+alpha+subdet][2] = rightbin
   for depth in depths:
     for alpha in ["Mean", "RMS"]:
+      rebin = int((maxlimit["depth"+alpha+subdet][2]-maxlimit["depth"+alpha+subdet][1])*100/50)
+      if rebin > 1:
+        if depth==depths[0]: maxlimit["depth"+alpha+subdet][0] = maxlimit["depth"+alpha+subdet][0] * rebin
+        for run in runs:
+          hdepth[subdet][depth][alpha][run].Rebin(rebin)
       hdepth[subdet][depth][alpha][runs[-1]].GetXaxis().SetRangeUser(maxlimit["depth"+alpha+subdet][1], maxlimit["depth"+alpha+subdet][2])
       hdepth[subdet][depth][alpha][runs[-1]].GetYaxis().SetRangeUser(0, maxlimit["depth"+alpha+subdet][0]*1.3)
 
@@ -351,6 +361,11 @@ for subdet in ["HB", "HE"]:
   for size in ["Small", "Large"]:
     for phi in [",36,37", ",12,13"]:
       for alpha in ["Mean", "RMS"]:
+        rebin = int((maxlimit["phi"+alpha+subdet][2]-maxlimit["phi"+alpha+subdet][1])*100/50)
+        if rebin > 1:
+          if size=="Small" and phi==",36,37": maxlimit["phi"+alpha+subdet][0] = maxlimit["phi"+alpha+subdet][0] * rebin
+          for run in runs:
+            hphi[subdet][size][phi][alpha][run].Rebin(rebin)
         hphi[subdet][size][phi][alpha][runs[-1]].GetXaxis().SetRangeUser(maxlimit["phi"+alpha+subdet][1], maxlimit["phi"+alpha+subdet][2])
         hphi[subdet][size][phi][alpha][runs[-1]].GetYaxis().SetRangeUser(0, maxlimit["phi"+alpha+subdet][0]*1.3)
 
