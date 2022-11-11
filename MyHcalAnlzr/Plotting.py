@@ -102,6 +102,26 @@ def MinMaxAxis(minv, maxv, mindist):
     thismin = thismax*0.2/1.2
   return thismin, thismax
 
+adc2fC = [ # https://github.com/cms-sw/cmssw/blob/f5b4310413558919869e0dfa7c9c231e4b2b03fc/DQM/HcalCommon/interface/Constants.h#L253
+        1.58,   4.73,   7.88,   11.0,   14.2,   17.3,   20.5,   23.6,   26.8,   29.9,   33.1,   36.2,   39.4,
+        42.5,   45.7,   48.8,   53.6,   60.1,   66.6,   73.0,   79.5,   86.0,   92.5,   98.9,   105,    112,
+        118,    125,    131,    138,    144,    151,    157,    164,    170,    177]
+adc2fc_graph = ROOT.TGraph(len(adc2fC), array('d', range(len(adc2fC))), array('d', adc2fC))
+fc2adc_graph = ROOT.TGraph(len(adc2fC), array('d', adc2fC), array('d', range(len(adc2fC))))
+
+fc2adc_fit = ROOT.TF1( 'fc2adc_fit', "([2]+[3]*x)*(x<45.7) + ([4]+[5]*x)*(x>53.6) + (([2]+[3]*x)*(53.6-x)/(53.6-45.7)+([4]+[5]*x)*(x-45.7)/(53.6-45.7))*(x>=45.7)*(x<=53.6)", 0, 180)
+fc2adc_fit.SetParameter(2,1.58)
+fc2adc_fit.SetParameter(3,3.15)
+fc2adc_fit.SetParameter(4,-50)
+fc2adc_fit.SetParameter(5,6.3)
+fc2adc_graph.Fit("fc2adc_fit", "F")
+
+def ADCtoFC(adc):
+  return adc2fc_graph.Eval(adc)
+
+def FCtoADC(fc):
+  return fc2adc_graph.Eval(fc)
+
 def MakeExtrapolation(gr, trend):
   N = gr[trend]["MeanMean"].GetN()
   x = []
@@ -113,6 +133,28 @@ def MakeExtrapolation(gr, trend):
     y[-1] += 2*gr[trend]["MeanRMS"].GetPointY(i)
     y[-1] += 2*gr[trend]["RMSMean"].GetPointY(i)
     y[-1] += 2*gr[trend]["RMSRMS"].GetPointY(i)
+    e.append(N-i)
+  gr = ROOT.TGraph(len(x), array('d', x), array('d', y))
+  grerr = ROOT.TGraphErrors(len(x), array('d', x), array('d', y), array('d', e), array('d', e))
+  return gr, grerr
+
+def MakeChargeExtrapolation(gr, trend):
+  N = gr[trend]["MeanMean"].GetN()
+  x = []
+  y = []
+  e = []
+  for i in range(N):
+    x.append(gr[trend]["MeanMean"].GetPointX(i))
+    #fc = ADCtoFC(gr[trend]["MeanMean"].GetPointY(i))
+    #fc += 2*ADCtoFC(gr[trend]["MeanRMS"].GetPointY(i))
+    #fc += 2*ADCtoFC(gr[trend]["RMSMean"].GetPointY(i))
+    #fc += 2*ADCtoFC(gr[trend]["RMSRMS"].GetPointY(i))
+    fc = gr[trend]["MeanMean"].GetPointY(i)
+    fc += 2*gr[trend]["MeanRMS"].GetPointY(i)
+    fc += 2*gr[trend]["RMSMean"].GetPointY(i)
+    fc += 2*gr[trend]["RMSRMS"].GetPointY(i)
+    fc = ADCtoFC(fc)
+    y.append(fc)
     e.append(N-i)
   gr = ROOT.TGraph(len(x), array('d', x), array('d', y))
   grerr = ROOT.TGraphErrors(len(x), array('d', x), array('d', y), array('d', e), array('d', e))
@@ -238,7 +280,7 @@ for title in grdict:
       gr[part][meanrms].Draw()
     else:
       gr[part][meanrms].Draw("PL same")
-    sizename = "PM" if subdet=="HF" else "SiPM"
+    sizename = "PMT" if subdet=="HF" else "SiPM"
     if subdet in ["HB", "HE"]:
       if "Small" in part: sizename = "Small SiPM"
       elif "Large" in part: sizename = "Large SiPM"
@@ -483,8 +525,8 @@ if dowhat=="lumi":
     exhists[-1].GetXaxis().SetTitle(xtitle)
     exhists[-1].GetXaxis().SetDecimals()
     exhists[-1].GetXaxis().SetLimits(exhists[-1].GetPointX(0), maxx)
-    if subdet=="HF": ytitle = "ADC (QIE10)"
-    elif subdet=="HO": ytitle = "ADC (QIE8)"
+    if "HF" in trend: ytitle = "ADC (QIE10)"
+    elif "HO" in trend: ytitle = "ADC (QIE8)"
     else: ytitle = "ADC (QIE11)"
     exhists[-1].GetYaxis().SetTitle(ytitle)
     thismin = ROOT.TMath.MinElement(exhists[-1].GetN(), exhists[-1].GetY())
@@ -516,6 +558,45 @@ if dowhat=="lumi":
     c[-1].SaveAs(output+"Extrapolation_"+trend+".png")
     c[-1].SaveAs(output+"Extrapolation_"+trend+".pdf")
     del exhistserror
+    del fit
+
+
+    ## Fit after translating ADC to FC
+    #exhists.append(None)
+    temphist, temphisterror = MakeChargeExtrapolation(gr, trend)
+    maxx = 1.5*exhists[-1].GetPointX(exhists[-1].GetN()-1)
+    fitfc = ROOT.TF1( 'fitfc', "[0]+[1]*x", exhists[-1].GetPointX(0), maxx)
+    temphisterror.Fit("fitfc", "F")
+    fit = ROOT.TF1( 'fit', "fc2adc_fit(fitfc(x))", exhists[-1].GetPointX(0), maxx)
+    fit.SetParameter(0,fitfc.GetParameter(0))
+    fit.SetParameter(1,fitfc.GetParameter(1))
+    print(fitfc.Eval(20), fc2adc_fit.Eval(41), fc2adc_graph.Eval(41), fc2adc_fit.Eval(fitfc.Eval(20)), fit.Eval(20), fc2adc_graph.Eval(adc2fc_graph.Eval(12.5)))
+
+    c.append(ROOT.TCanvas( 'c'+str(len(c)+1), 'c'+str(len(c)+1), 600, 600 ))
+    c[-1].cd()
+    exhists[-1].Draw()
+    c[-1].Draw()
+    fit.Draw("SAME")
+    legend.append(ROOT.TLegend(0.1,0.8,0.9,0.9))
+    legend[-1].AddEntry(exhists[-1],"#mu_{#mu} + 2*#mu_{#sigma} + 2*#sigma_{#mu} + 2*#sigma_{#sigma}","pl")
+    legend[-1].AddEntry(fit,"Linear fit (weighted towards recent data)","l")
+    legend[-1].Draw()
+
+    # Now draw hori/vert lines at every ADC count beyond current measurments
+    lines = []
+    for alpha in range(int(exhists[-1].GetPointY(exhists[-1].GetN()-1))+1, int(fit.Eval(maxx))+1):
+      XatY = fit.GetX(alpha)
+      lines.append(ROOT.TLine(exhists[-1].GetPointX(0), alpha, XatY, alpha))
+      lines.append(ROOT.TLine(XatY, thismin - (thismax-thismin)*0.2, XatY, alpha))
+      lines[-2].SetLineColor(ROOT.kRed)
+      lines[-1].SetLineColor(ROOT.kRed)
+      lines[-2].Draw("SAME")
+      lines[-1].Draw("SAME")
+
+    c[-1].SaveAs(output+"ExtrapolationFC_"+trend+".png")
+    c[-1].SaveAs(output+"ExtrapolationFC_"+trend+".pdf")
+    del temphist
+    del temphisterror
     del fit
 
 exit()

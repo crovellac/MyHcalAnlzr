@@ -55,3 +55,4 @@ hadd hist_LocalOutput_hadd.root hist_LocalOutputSummary_run*.root
 # Make plots
 #python3 Plotting.py hist_LocalOutput_hadd.root daysince
 source makePlots.sh PED_plots
+mv /eos/user/d/dmroy/www/plots_archive/PED_plots/extrapolations/ExtrapolationFC_H* /eos/user/d/dmroy/www/plots_archive/PED_plots/extrapolations_FC/
