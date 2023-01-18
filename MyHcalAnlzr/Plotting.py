@@ -511,6 +511,8 @@ if dowhat=="lumi":
     maxx = 1.5*exhists[-1].GetPointX(exhists[-1].GetN()-1)
     #fit = ROOT.TF1( 'fit', "[0]+[1]*x+[2]*x*x", exhists[-1].GetPointX(0), exhists[-1].GetPointX(exhists[-1].GetN()-1))
     fit = ROOT.TF1( 'fit', "[0]+[1]*x", exhists[-1].GetPointX(0), maxx)
+    #fit = ROOT.TF1( 'fit', "[0]+[1]*x^[2]", exhists[-1].GetPointX(0), maxx)
+    #fit.SetParameter(2,1.0)
     exhistserror.Fit("fit", "F")
 
     if "HB" in trend: color = ROOT.kBlue
