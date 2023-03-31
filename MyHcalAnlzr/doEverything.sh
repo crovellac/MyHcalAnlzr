@@ -9,7 +9,7 @@ floatday=$4
 #floatday="08.02"
 
 
-# cmsRun step
+# HcalNano step
 #cd python
 #sed -i "s/XXXXXX/${run}/g" localrun_singleFull.py
 #cmsRun localrun_singleFull.py
@@ -20,6 +20,7 @@ floatday=$4
 #  sed -i "s/${pedrun}/XXXXXX/g" localrun_singlePed.py
 #fi
 #cd ..
+python3 FindDatasetToRun.py ${run}
 
 
 # Digi step: From nano tuple, make one histogram per channel
