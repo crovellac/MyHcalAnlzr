@@ -7,17 +7,18 @@ ROOT.gStyle.SetOptFit(1)
 ROOT.gStyle.SetOptStat(0)
 ROOT.gROOT.SetBatch(True)
 
-runid = sys.argv[1] # Integer as string
-days = sys.argv[2]
-lumi = sys.argv[3]
-floatday = sys.argv[4] # e.g. "05.07"
+#runid = sys.argv[1] # Integer as string
+days = sys.argv[1]
+lumi = sys.argv[2]
+floatday = sys.argv[3] # e.g. "05.07"
 #runid = "363781"
 #days = 123
 #lumi = 12.3
 #floatday = "12.03"
 
-
-fin=ROOT.TFile.Open("hist_CalibOutput_run"+runid+".root", "READ")
+fileName = [f for f in os.listdir(".") if f.endswith("_"+floatday+".root")][0]
+runid = fileName[20:26]
+fin=ROOT.TFile.Open(fileName, "READ")
 histos = {}
 histos["FC"] = {}
 histos["ADC"] = {}
@@ -30,9 +31,9 @@ for subdet in subdets:
 # Load
 for key in fin.GetListOfKeys():
   hname = key.GetName()
-  if "ADC" in hname:
+  if "_ADC" in hname:
     histos["ADC"][hname[hname.find("subdet")+6:hname.find("subdet")+8]][hname] = fin.Get(hname)
-  else:
+  elif "_FC" in hname:
     histos["FC"][hname[hname.find("subdet")+6:hname.find("subdet")+8]][hname] = fin.Get(hname)
 
 # Define everything to process
@@ -44,10 +45,13 @@ for depth in range(7):
 pedtrend += ["HB_sipmSmall_phi,1,72", "HB_sipmLarge_phi,1,72", "HE_sipmSmall_phi,1,72", "HE_sipmLarge_phi,1,72"]
 pedtrend += ["HB_sipmSmall_phi,18,19", "HB_sipmLarge_phi,18,19", "HE_sipmSmall_phi,18,19", "HE_sipmLarge_phi,18,19"]
 pedtrend += ["HB_sipmSmall_phi,36,37", "HB_sipmLarge_phi,36,37", "HE_sipmSmall_phi,36,37", "HE_sipmLarge_phi,36,37"]
-pedtrend += ["HB_sipmSmall_HBP14RM1", "HB_sipmLarge_HBP14RM1"]
+pedtrend += ["HB_sipmSmall_HBP14RM1", "HB_sipmLarge_HBP14RM1", "HB_sipmSmall_HBM09RM3", "HB_sipmLarge_HBM09RM3"]
 
 def IsHBP14RM1(hname):
   if "iphi51" in hname and "ieta-" not in hname: return True
+  return False
+def IsHBM09RM3(hname):
+  if "iphi32" in hname and "ieta-" in hname: return True
   return False
 
 # Process
@@ -65,9 +69,12 @@ for p in pedtrend:
           if all("phi"+phicut+"_" not in hname for phicut in cut.split(",")[1:]): skip = True
         elif "HBP14RM" in cut:
           if not IsHBP14RM1(hname): skip=True
+        elif "HBM09RM" in cut:
+          if not IsHBM09RM3(hname): skip=True
         elif cut not in hname: skip = True
         #elif cut!="sipm" and cut not in hname: skip = True # cut!="sipm" -> Temporary, until SiPM sizes are saved. I need to fix naming conventions of saved histograms
       if ("HB" in p) and ("HBP14RM1" not in p) and (IsHBP14RM1(hname)): skip=True
+      if ("HB" in p) and ("HBM09RM3" not in p) and (IsHBM09RM3(hname)): skip=True
       if not skip:
         mean = histos[unit][subdet][hname].GetMean()
         rms = histos[unit][subdet][hname].GetRMS()

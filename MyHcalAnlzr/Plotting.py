@@ -102,25 +102,25 @@ def MinMaxAxis(minv, maxv, mindist):
     thismin = thismax*0.2/1.2
   return thismin, thismax
 
-adc2fC = [ # https://github.com/cms-sw/cmssw/blob/f5b4310413558919869e0dfa7c9c231e4b2b03fc/DQM/HcalCommon/interface/Constants.h#L253
-        1.58,   4.73,   7.88,   11.0,   14.2,   17.3,   20.5,   23.6,   26.8,   29.9,   33.1,   36.2,   39.4,
-        42.5,   45.7,   48.8,   53.6,   60.1,   66.6,   73.0,   79.5,   86.0,   92.5,   98.9,   105,    112,
-        118,    125,    131,    138,    144,    151,    157,    164,    170,    177]
-adc2fc_graph = ROOT.TGraph(len(adc2fC), array('d', range(len(adc2fC))), array('d', adc2fC))
-fc2adc_graph = ROOT.TGraph(len(adc2fC), array('d', adc2fC), array('d', range(len(adc2fC))))
+#adc2fC = [ # https://github.com/cms-sw/cmssw/blob/f5b4310413558919869e0dfa7c9c231e4b2b03fc/DQM/HcalCommon/interface/Constants.h#L253
+#        1.58,   4.73,   7.88,   11.0,   14.2,   17.3,   20.5,   23.6,   26.8,   29.9,   33.1,   36.2,   39.4,
+#        42.5,   45.7,   48.8,   53.6,   60.1,   66.6,   73.0,   79.5,   86.0,   92.5,   98.9,   105,    112,
+#        118,    125,    131,    138,    144,    151,    157,    164,    170,    177]
+#adc2fc_graph = ROOT.TGraph(len(adc2fC), array('d', range(len(adc2fC))), array('d', adc2fC))
+#fc2adc_graph = ROOT.TGraph(len(adc2fC), array('d', adc2fC), array('d', range(len(adc2fC))))
 
-fc2adc_fit = ROOT.TF1( 'fc2adc_fit', "([2]+[3]*x)*(x<45.7) + ([4]+[5]*x)*(x>53.6) + (([2]+[3]*x)*(53.6-x)/(53.6-45.7)+([4]+[5]*x)*(x-45.7)/(53.6-45.7))*(x>=45.7)*(x<=53.6)", 0, 180)
-fc2adc_fit.SetParameter(2,1.58)
-fc2adc_fit.SetParameter(3,3.15)
-fc2adc_fit.SetParameter(4,-50)
-fc2adc_fit.SetParameter(5,6.3)
-fc2adc_graph.Fit("fc2adc_fit", "F")
+#fc2adc_fit = ROOT.TF1( 'fc2adc_fit', "([2]+[3]*x)*(x<45.7) + ([4]+[5]*x)*(x>53.6) + (([2]+[3]*x)*(53.6-x)/(53.6-45.7)+([4]+[5]*x)*(x-45.7)/(53.6-45.7))*(x>=45.7)*(x<=53.6)", 0, 180)
+#fc2adc_fit.SetParameter(2,1.58)
+#fc2adc_fit.SetParameter(3,3.15)
+#fc2adc_fit.SetParameter(4,-50)
+#fc2adc_fit.SetParameter(5,6.3)
+#fc2adc_graph.Fit("fc2adc_fit", "F")
 
-def ADCtoFC(adc):
-  return adc2fc_graph.Eval(adc)
+#def ADCtoFC(adc):
+#  return adc2fc_graph.Eval(adc)
 
-def FCtoADC(fc):
-  return fc2adc_graph.Eval(fc)
+#def FCtoADC(fc):
+#  return fc2adc_graph.Eval(fc)
 
 def MakeExtrapolation(gr, trend):
   N = gr[trend]["MeanMean"].GetN()
@@ -233,15 +233,17 @@ for title in grdict:
     subdet = grdict[title][1]
     parts = [trend for trend in trends if trend.startswith(subdet) and trend.endswith(unit) and "depth" not in trend]
     # Manually sort:
-    if parts == ['HB_sipmLarge_'+unit, 'HB_sipmLarge_HBP14RM1_'+unit, 'HB_sipmLarge_phi,1,72_'+unit, 'HB_sipmLarge_phi,18,19_'+unit, 'HB_sipmLarge_phi,36,37_'+unit, 'HB_sipmSmall_'+unit, 'HB_sipmSmall_HBP14RM1_'+unit, 'HB_sipmSmall_phi,1,72_'+unit, 'HB_sipmSmall_phi,18,19_'+unit, 'HB_sipmSmall_phi,36,37_'+unit]:
-      parts = ['HB_sipmLarge_'+unit, 'HB_sipmSmall_'+unit, 'HB_sipmLarge_phi,1,72_'+unit, 'HB_sipmSmall_phi,1,72_'+unit, 'HB_sipmLarge_phi,36,37_'+unit, 'HB_sipmSmall_phi,36,37_'+unit, 'HB_sipmLarge_phi,18,19_'+unit, 'HB_sipmSmall_phi,18,19_'+unit, 'HB_sipmLarge_HBP14RM1_'+unit, 'HB_sipmSmall_HBP14RM1_'+unit]
+    if parts == ['HB_sipmLarge_'+unit, 'HB_sipmLarge_HBM09RM3_'+unit, 'HB_sipmLarge_HBP14RM1_'+unit, 'HB_sipmLarge_phi,1,72_'+unit, 'HB_sipmLarge_phi,18,19_'+unit, 'HB_sipmLarge_phi,36,37_'+unit, 'HB_sipmSmall_'+unit, 'HB_sipmSmall_HBM09RM3_'+unit, 'HB_sipmSmall_HBP14RM1_'+unit, 'HB_sipmSmall_phi,1,72_'+unit, 'HB_sipmSmall_phi,18,19_'+unit, 'HB_sipmSmall_phi,36,37_'+unit]:
+      parts = ['HB_sipmLarge_'+unit, 'HB_sipmSmall_'+unit, 'HB_sipmLarge_phi,1,72_'+unit, 'HB_sipmSmall_phi,1,72_'+unit, 'HB_sipmLarge_phi,36,37_'+unit, 'HB_sipmSmall_phi,36,37_'+unit, 'HB_sipmLarge_HBP14RM1_'+unit, 'HB_sipmSmall_HBP14RM1_'+unit, 'HB_sipmLarge_HBM09RM3_'+unit, 'HB_sipmSmall_HBM09RM3_'+unit] # , 'HB_sipmLarge_phi,18,19_'+unit, 'HB_sipmSmall_phi,18,19_'+unit
     if parts == ['HE_sipmLarge_'+unit, 'HE_sipmLarge_phi,1,72_'+unit, 'HE_sipmLarge_phi,18,19_'+unit, 'HE_sipmLarge_phi,36,37_'+unit, 'HE_sipmSmall_'+unit, 'HE_sipmSmall_phi,1,72_'+unit, 'HE_sipmSmall_phi,18,19_'+unit, 'HE_sipmSmall_phi,36,37_'+unit]:
-      parts = ['HE_sipmLarge_'+unit, 'HE_sipmSmall_'+unit, 'HE_sipmLarge_phi,1,72_'+unit, 'HE_sipmSmall_phi,1,72_'+unit, 'HE_sipmLarge_phi,36,37_'+unit, 'HE_sipmSmall_phi,36,37_'+unit, 'HE_sipmLarge_phi,18,19_'+unit, 'HE_sipmSmall_phi,18,19_'+unit]
+      parts = ['HE_sipmLarge_'+unit, 'HE_sipmSmall_'+unit, 'HE_sipmLarge_phi,1,72_'+unit, 'HE_sipmSmall_phi,1,72_'+unit, 'HE_sipmLarge_phi,36,37_'+unit, 'HE_sipmSmall_phi,36,37_'+unit] # , 'HE_sipmLarge_phi,18,19_'+unit, 'HE_sipmSmall_phi,18,19_'+unit
     thismin, thismax = MinMaxAxis((limits[trend+meanrms][0] for trend in parts), (limits[trend+meanrms][1] for trend in parts), 0.5)
     if subdet=="HB": color = ROOT.kBlue
     elif subdet=="HE": color = ROOT.kGreen
     elif subdet=="HF": color = ROOT.kRed
     elif subdet=="HO": color = ROOT.kBlack
+    lowedge = 999
+    upedge = 0
     for j,part in enumerate(parts):
       if gr[part][meanrms] is None: continue
       if "HB" in part or "HE" in part:
@@ -254,15 +256,19 @@ for title in grdict:
       elif "phi,36," in part:
         tcolor = color-5
         marker = 23
-        line = 10
+        line = 5
       elif "phi,18," in part:
         tcolor = color-7
         marker = 20
-        line = 9
+        line = 6
       elif "HBP14RM1" in part:
         tcolor = color+4
         marker = 33
-        line = 2
+        line = 7
+      elif "HBM09RM3" in part:
+        tcolor = color+4
+        marker = 34
+        line = 8
       else:
         tcolor = color
         marker = 21
@@ -288,16 +294,27 @@ for title in grdict:
         gr[part][meanrms].Draw()
       else:
         gr[part][meanrms].Draw("PL same")
+      lowedge = min(lowedge, gr[part][meanrms].GetXaxis().GetBinLowEdge(gr[part][meanrms].GetXaxis().GetFirst()))
+      upedge = max(upedge, gr[part][meanrms].GetXaxis().GetBinUpEdge(gr[part][meanrms].GetXaxis().GetLast()))
+      # Legend
       sizename = "PMT" if subdet=="HF" else "SiPM"
       if subdet in ["HB", "HE"]:
         if "Small" in part: sizename = "Small SiPM"
         elif "Large" in part: sizename = "Large SiPM"
-        if "phi,36," in part: sizename += ", iphi in [36,37]" 
-        elif "phi,18," in part: sizename += ", iphi in [18,19]" 
-        elif "phi,1," in part: sizename += ", iphi in [72,1]" 
-        elif "HBP14RM1" in part: sizename += ", HBP14 RM1" 
+        if "phi,36," in part: sizename += ", iphi in [36,37]"
+        elif "phi,18," in part: sizename += ", iphi in [18,19]"
+        elif "phi,1," in part: sizename += ", iphi in [72,1]"
+        elif "HBP14RM1" in part: sizename += ", HBP14 RM1"
+        elif "HBM09RM3" in part: sizename += ", HBM09 RM3"
       label = subdet + " " + sizename + ""
       legend[-1].AddEntry(gr[part][meanrms], label, "pl")
+    # Vertical lines at 1st of every month
+    monthlines = []
+    for linehere in [32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]:
+      if lowedge > linehere or upedge < linehere: continue
+      monthlines.append(ROOT.TLine(linehere, thismin - (thismax-thismin)*0.2, linehere, thismax + (thismax-thismin)*0.3))
+      monthlines[-1].SetLineStyle(3)
+      monthlines[-1].Draw("SAME")
     legend[-1].Draw()
     c[-1].Draw()
     c[-1].SaveAs(output+title.replace(" ", "_")+"_"+unit+".png")

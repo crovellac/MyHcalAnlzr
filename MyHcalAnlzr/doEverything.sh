@@ -1,7 +1,6 @@
-run=$1
-days=$2
-lumi=$3
-floatday=$4
+days=$1
+lumi=$2
+floatday=$3
 
 #run="363427"
 #days="39"
@@ -20,15 +19,15 @@ floatday=$4
 #  sed -i "s/${pedrun}/XXXXXX/g" localrun_singlePed.py
 #fi
 #cd ..
-python3 FindDatasetToRun.py ${run}
+python3 FindDatasetToRun.py ${floatday}
 
 
 # Digi step: From nano tuple, make one histogram per channel
-./macro_nano ${run} ${floatday}
+./macro_nano ${floatday}
 
 
 # Process step: From previous histograms, combine kinds (e.g. all HB, all HE, ...)
-python3 digi_process.py ${run} ${days} ${lumi} ${floatday}
+python3 digi_process.py ${days} ${lumi} ${floatday}
 mv hist_CalibOutput_hadd.root hist_CalibOutput_hadd.root_old
 hadd hist_CalibOutput_hadd.root hist_CalibOutputSummary_run*.root
 

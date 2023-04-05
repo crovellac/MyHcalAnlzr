@@ -3,7 +3,7 @@ import glob
 import time
 import json
 
-date = "30.03"#sys.argv[1]
+date = sys.argv[1]
 day = str(int(date.split(".")[0]))
 month = str(int(date.split(".")[1]))
 
@@ -69,7 +69,7 @@ else:
 files = []
 for run in runs:
   runstr = run[:3]+"/"+run[3:]
-  files += [f for f in glob.glob("/eos/cms/tier0/store/data/Commissioning2023/StreamCalibration/*/*/*/"+runstr+"/*/*") if f.endswith(".root")]
+  files += [f for f in glob.glob("/eos/cms/tier0/store/data/Commissioning2023/TestEnablesEcalHcal/*/*/*/"+runstr+"/*/*") if f.endswith(".root")]
 
 # Process the largest file
 size = 0
@@ -83,12 +83,14 @@ if myfile == "":
   print("NO FILES FOUND!")
 else:
   print("Processing",myfile,"...")
+run = myfile.split("/")[11]+myfile.split("/")[12]
 
 # Run
 os.system("cp HcalNano_Template.sh HcalNano_"+run+".sh")
 filein = myfile.replace("/eos/cms/tier0", "").replace("/", "\/")
 os.system('sed -i "s/FILEIN/'+filein+'/g" HcalNano_'+run+'.sh')
 os.system('sed -i "s/XXXXXX/'+run+'/g" HcalNano_'+run+'.sh')
+os.system('sed -i "s/DAY/'+date+'/g" HcalNano_'+run+'.sh')
 os.system('. ./HcalNano_'+run+'.sh') # "source" somehow doesn't work here, but it works when you just replace it with "."
 
 print("Done making NanoTuple!")

@@ -15,6 +15,7 @@
 #include <math.h>
 #include <assert.h> 
 #include <iomanip>
+#include <filesystem>
 
 #include <stdlib.h>
 
@@ -27,19 +28,29 @@ int main(int argc, char *argv[])
     exit(0);
   }*/
 
-  string runid = argv[1]; // Integer
-  string floatday = argv[2]; // String, e.g. "22.02"
-  bool RemovePED = true;
+  //string runid = argv[1]; // Integer
+  string floatday = argv[1]; // String, e.g. "22.02"
+  bool RemovePED = true; //  True measured charges (DigiHB_fc0) need to be subtracted by pedestal value (DigiHB_pedestalfc0)
+
+  // New: Get input based on date in name, then find run number
+  std::string fileName;
+  for (const auto & entry : std::filesystem::directory_iterator("/eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/")){
+    fileName = entry.path().filename().string();
+    if (fileName.find(floatday) != std::string::npos){
+      break;
+    }
+  }
+  string runid = fileName.substr(25, 6);
 
   // There is a DISGUSTING amount of hardcoding here; unfortunately I wasn't able to loop over subdets or time slices.
 
-  TFile *f = new TFile(("/eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/output_CalibRuns_Nano_Run"+runid+".root").c_str(), "read");
+  TFile *f = new TFile(("/eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/"+fileName).c_str(), "read");
   TNtuple* qiedigi = (TNtuple*)f->Get("Events");
   int ntot = qiedigi->GetEntries();
   std::cout << "Reading in input file, total " << ntot << " Entries." << std::endl;
   //float RunNum, LumiNum, EvtNum;
   //float ieta, iphi, depth, sumADC, type, shunt;
-  uint nDigiHB, nDigiHE, nDigiHF, nDigiHO;
+  int nDigiHB, nDigiHE, nDigiHF, nDigiHO;
   qiedigi->SetBranchAddress("nDigiHB", &nDigiHB); // always 9072 ?
   qiedigi->SetBranchAddress("nDigiHE", &nDigiHE); // always 6768 ?
   qiedigi->SetBranchAddress("nDigiHF", &nDigiHF); // always 3456 ?
@@ -173,7 +184,7 @@ int main(int argc, char *argv[])
   qiedigi->SetBranchAddress("DigiHE_sipmTypes", &DigiHE_sipmTypes);
 
 
-  TFile *ofile = new TFile(("hist_CalibOutput_run"+runid+".root").c_str(), "recreate");
+  TFile *ofile = new TFile(("hist_CalibOutput_run"+runid+"_"+floatday+".root").c_str(), "recreate");
 
   std::cout << "Creating base histograms..." << std::endl;
 
@@ -202,6 +213,38 @@ int main(int argc, char *argv[])
       }
     }
   }*/
+
+  TH2F* ADCvsFC = new TH2F("ADC vs FC", "Conversion; ADC; FC", 32, 0, 32, 10000, 0, 1000);
+  double fC_vals[256] = { // https://github.com/cms-sw/cmssw/blob/f5b4310413558919869e0dfa7c9c231e4b2b03fc/DQM/HcalCommon/interface/Constants.h#L253
+        1.58,   4.73,   7.88,   11.0,   14.2,   17.3,   20.5,   23.6,   26.8,   29.9,   33.1,   36.2,   39.4,
+        42.5,   45.7,   48.8,   53.6,   60.1,   66.6,   73.0,   79.5,   86.0,   92.5,   98.9,   105,    112,
+        118,    125,    131,    138,    144,    151,    157,    164,    170,    177,    186,    199,    212,
+        225,    238,    251,    264,    277,    289,    302,    315,    328,    341,    354,    367,    380,
+        393,    406,    418,    431,    444,    464,    490,    516,    542,    568,    594,    620,    569,
+        594,    619,    645,    670,    695,    720,    745,    771,    796,    821,    846,    871,    897,
+        922,    947,    960,    1010,   1060,   1120,   1170,   1220,   1270,   1320,   1370,   1430,   1480,
+        1530,   1580,   1630,   1690,   1740,   1790,   1840,   1890,   1940,   2020,   2120,   2230,   2330,
+        2430,   2540,   2640,   2740,   2850,   2950,   3050,   3150,   3260,   3360,   3460,   3570,   3670,
+        3770,   3880,   3980,   4080,   4240,   4450,   4650,   4860,   5070,   5280,   5490,
+
+        5080,   5280,   5480,   5680,   5880,   6080,   6280,   6480,   6680,   6890,   7090,   7290,   7490,
+        7690,   7890,   8090,   8400,   8810,   9220,   9630,   10000,  10400,  10900,  11300,  11700,  12100,
+        12500,  12900,  13300,  13700,  14100,  14500,  15000,  15400,  15800,  16200,  16800,  17600,  18400,
+        19300,  20100,  20900,  21700,  22500,  23400,  24200,  25000,  25800,  26600,  27500,  28300,  29100,
+        29900,  30700,  31600,  32400,  33200,  34400,  36100,  37700,  39400,  41000,  42700,  44300,  41100,
+        42700,  44300,  45900,  47600,  49200,  50800,  52500,  54100,  55700,  57400,  59000,  60600,  62200,
+        63900,  65500,  68000,  71300,  74700,  78000,  81400,  84700,  88000,  91400,  94700,  98100,  101000,
+        105000, 108000, 111000, 115000, 118000, 121000, 125000, 128000, 131000, 137000, 145000, 152000, 160000,
+        168000, 176000, 183000, 191000, 199000, 206000, 214000, 222000, 230000, 237000, 245000, 253000, 261000,
+        268000, 276000, 284000, 291000, 302000, 316000, 329000, 343000, 356000, 370000, 384000};
+  double ADC_vals[256];
+  for (int i = 0; i < 256; i++){
+    ADC_vals[i] = i;
+  }
+  TGraph* adc2fc = new TGraph(256, ADC_vals, fC_vals);
+  TGraph* fc2adc = new TGraph(256, fC_vals, ADC_vals);
+  adc2fc->SetTitle("ADC to FC; ADC; FC");
+  fc2adc->SetTitle("FC to ADC; FC; ADC");
 
   std::cout << "Looping over input events..." << std::endl;
 
@@ -318,15 +361,47 @@ int main(int argc, char *argv[])
         if(subdet=="HB"){
           if(RemovePED){
             fcsum = (DigiHB_fc0[j]+DigiHB_fc1[j]+DigiHB_fc2[j]+DigiHB_fc3[j]+DigiHB_fc4[j]+DigiHB_fc5[j]+DigiHB_fc6[j]+DigiHB_fc7[j] - DigiHB_pedestalfc0[j]-DigiHB_pedestalfc1[j]-DigiHB_pedestalfc2[j]-DigiHB_pedestalfc3[j]-DigiHB_pedestalfc4[j]-DigiHB_pedestalfc5[j]-DigiHB_pedestalfc6[j]-DigiHB_pedestalfc7[j]) / 8.0;
+            ADCvsFC->Fill(DigiHB_adc0[j], DigiHB_fc0[j]-DigiHB_pedestalfc0[j]);
+            ADCvsFC->Fill(DigiHB_adc1[j], DigiHB_fc1[j]-DigiHB_pedestalfc1[j]);
+            ADCvsFC->Fill(DigiHB_adc2[j], DigiHB_fc2[j]-DigiHB_pedestalfc2[j]);
+            ADCvsFC->Fill(DigiHB_adc3[j], DigiHB_fc3[j]-DigiHB_pedestalfc3[j]);
+            ADCvsFC->Fill(DigiHB_adc4[j], DigiHB_fc4[j]-DigiHB_pedestalfc4[j]);
+            ADCvsFC->Fill(DigiHB_adc5[j], DigiHB_fc5[j]-DigiHB_pedestalfc5[j]);
+            ADCvsFC->Fill(DigiHB_adc6[j], DigiHB_fc6[j]-DigiHB_pedestalfc6[j]);
+            ADCvsFC->Fill(DigiHB_adc7[j], DigiHB_fc7[j]-DigiHB_pedestalfc7[j]);
           }else{
             fcsum = (DigiHB_fc0[j]+DigiHB_fc1[j]+DigiHB_fc2[j]+DigiHB_fc3[j]+DigiHB_fc4[j]+DigiHB_fc5[j]+DigiHB_fc6[j]+DigiHB_fc7[j]) / 8.0;
+            ADCvsFC->Fill(DigiHB_adc0[j], DigiHB_fc0[j]);
+            ADCvsFC->Fill(DigiHB_adc1[j], DigiHB_fc1[j]);
+            ADCvsFC->Fill(DigiHB_adc2[j], DigiHB_fc2[j]);
+            ADCvsFC->Fill(DigiHB_adc3[j], DigiHB_fc3[j]);
+            ADCvsFC->Fill(DigiHB_adc4[j], DigiHB_fc4[j]);
+            ADCvsFC->Fill(DigiHB_adc5[j], DigiHB_fc5[j]);
+            ADCvsFC->Fill(DigiHB_adc6[j], DigiHB_fc6[j]);
+            ADCvsFC->Fill(DigiHB_adc7[j], DigiHB_fc7[j]);
           }
           adcsum = (DigiHB_adc0[j]+DigiHB_adc1[j]+DigiHB_adc2[j]+DigiHB_adc3[j]+DigiHB_adc4[j]+DigiHB_adc5[j]+DigiHB_adc6[j]+DigiHB_adc7[j]) / 8.0;
         }else if (subdet=="HE"){
           if(RemovePED){
             fcsum = (DigiHE_fc0[j]+DigiHE_fc1[j]+DigiHE_fc2[j]+DigiHE_fc3[j]+DigiHE_fc4[j]+DigiHE_fc5[j]+DigiHE_fc6[j]+DigiHE_fc7[j] - DigiHE_pedestalfc0[j]-DigiHE_pedestalfc1[j]-DigiHE_pedestalfc2[j]-DigiHE_pedestalfc3[j]-DigiHE_pedestalfc4[j]-DigiHE_pedestalfc5[j]-DigiHE_pedestalfc6[j]-DigiHE_pedestalfc7[j]) / 8.0;
+            ADCvsFC->Fill(DigiHE_adc0[j], DigiHE_fc0[j]-DigiHE_pedestalfc0[j]);
+            ADCvsFC->Fill(DigiHE_adc1[j], DigiHE_fc1[j]-DigiHE_pedestalfc1[j]);
+            ADCvsFC->Fill(DigiHE_adc2[j], DigiHE_fc2[j]-DigiHE_pedestalfc2[j]);
+            ADCvsFC->Fill(DigiHE_adc3[j], DigiHE_fc3[j]-DigiHE_pedestalfc3[j]);
+            ADCvsFC->Fill(DigiHE_adc4[j], DigiHE_fc4[j]-DigiHE_pedestalfc4[j]);
+            ADCvsFC->Fill(DigiHE_adc5[j], DigiHE_fc5[j]-DigiHE_pedestalfc5[j]);
+            ADCvsFC->Fill(DigiHE_adc6[j], DigiHE_fc6[j]-DigiHE_pedestalfc6[j]);
+            ADCvsFC->Fill(DigiHE_adc7[j], DigiHE_fc7[j]-DigiHE_pedestalfc7[j]);
           }else{
             fcsum = (DigiHE_fc0[j]+DigiHE_fc1[j]+DigiHE_fc2[j]+DigiHE_fc3[j]+DigiHE_fc4[j]+DigiHE_fc5[j]+DigiHE_fc6[j]+DigiHE_fc7[j]) / 8.0;
+            ADCvsFC->Fill(DigiHE_adc0[j], DigiHE_fc0[j]);
+            ADCvsFC->Fill(DigiHE_adc1[j], DigiHE_fc1[j]);
+            ADCvsFC->Fill(DigiHE_adc2[j], DigiHE_fc2[j]);
+            ADCvsFC->Fill(DigiHE_adc3[j], DigiHE_fc3[j]);
+            ADCvsFC->Fill(DigiHE_adc4[j], DigiHE_fc4[j]);
+            ADCvsFC->Fill(DigiHE_adc5[j], DigiHE_fc5[j]);
+            ADCvsFC->Fill(DigiHE_adc6[j], DigiHE_fc6[j]);
+            ADCvsFC->Fill(DigiHE_adc7[j], DigiHE_fc7[j]);
           }
           adcsum = (DigiHE_adc0[j]+DigiHE_adc1[j]+DigiHE_adc2[j]+DigiHE_adc3[j]+DigiHE_adc4[j]+DigiHE_adc5[j]+DigiHE_adc6[j]+DigiHE_adc7[j]) / 8.0;
         }else if (subdet=="HF"){
@@ -375,7 +450,7 @@ int main(int argc, char *argv[])
   std::cout << "Writing table..." << std::endl;
 
   ofstream tablefile;
-  tablefile.open("Table_Run"+runid+"_"+floatday+".2022.txt");
+  tablefile.open("Table_Run"+runid+"_"+floatday+".2023.txt");
   tablefile << setw(8) << "SubDet" << setw(8) << "SiPM" << setw(8) << "ieta" << setw(8) << "iphi" << setw(8) << "depth" << setw(12) << "ADC Mean" << setw(12) << "ADC RMS" << setw(12) << "fC Mean" << setw(12) << "fC RMS" << "\n";
   for (auto const& subdet : subdets){
     for (auto const& siz : histarrayFC[subdet]){
@@ -469,7 +544,7 @@ int main(int argc, char *argv[])
   std::cout << "Writing xml..." << std::endl;
 
   ofstream xmlfile;
-  xmlfile.open("TEST.xml");
+  xmlfile.open(floatday+".2023.xml");
 
   auto MakeNewBrick = [&xmlfile](int crate, int slot, int elements){
     xmlfile << "  <CFGBrick>" << "\n";
@@ -494,10 +569,11 @@ int main(int argc, char *argv[])
   vector<int> FibNotInMod2{ 0, 1, 10, 11 };
   vector<int> FibNotInMod0{ 0, 11, 12, 23 };
   bool isHE;
+  string subdet;
   for(int crate: HBHEcrateVec){
     for(int slot=1; slot<13; slot++){
-      int modulo = slot%3;
-      int elements, maxchannel, ZS;
+      int modulo = slot%3; // mod 1 (1,4,7...) = HB only,    mod 2 (2,5,8...) = HBHE mix,    mod 0 (3,6,9...) = HE only
+      int elements, maxchannel, ZS, smallEntries, largeEntries;
       string mystring;
       int filled = 0;
       if(modulo==0){
@@ -510,11 +586,14 @@ int main(int argc, char *argv[])
       for(int fiber=0; fiber<24; fiber++){
         bool FiberNotInUHTR = (modulo==2 and find(FibNotInMod2.begin(), FibNotInMod2.end(), fiber) != FibNotInMod2.end()) or (modulo==0 and find(FibNotInMod0.begin(), FibNotInMod0.end(), fiber) != FibNotInMod0.end());
         for(int channel=0; channel<maxchannel; channel++){
+          // (Note on ranges: RM 1-4, RMFI 1-8, CH 0-5 HE, CH 0-7 HB)
           if((modulo==2 and fiber==10 and (channel==4 || channel==5)) || (modulo==0 and fiber==11 and (channel==0 || channel==1))){ // Nonexistent HB channels (for some reason have ZS 0 instead of 255)
             ZS = 0;
-          }else if(modulo==2 and ((fiber==14 and channel==4) || (fiber==15 and channel==0) || (fiber==20 and channel==4) || (fiber==21 and channel==0))){ // Masked HE channels, RM1 RMFI6 CH4, RM2 RMFI4 CH0, RM3 RMFI6 CH4, RM4 RMFI4 CH0 (Note on ranges: RM 1-4, RMFI 1-8, CH 0-5 HE, CH 0-7 HB)
+          }else if(modulo==2 and ((fiber==14 and channel==4) || (fiber==15 and channel==0) || (fiber==20 and channel==4) || (fiber==21 and channel==0))){ // Masked HE channels, RM1 RMFI6 CH4, RM2 RMFI4 CH0, RM3 RMFI6 CH4, RM4 RMFI4 CH0
             ZS = 255;
           //}else if((modulo==2 and (fiber==2 || fiber==6) and channel==2) || (modulo==1 and (fiber==21 || fiber==23) and channel==0)){ // Masked HB channels, uHTR2 RM1 RMFI2 CH2, uHTR1 RM2 RMFI8 CH0, uHTR2 RM3 RMFI2 CH2, uHTR1 RM4 RMFI8 CH0
+          //  ZS = 255;
+          //}else if((modulo==2 and (fiber==2 || fiber==6) and channel==2) || (modulo==1 and (fiber==21 || fiber==23) and channel==0)){ // Masked HB channels, HBM04RM3: uHTR2 RM3 RMFI6 CH0-7 ###########TODO
           //  ZS = 255;
           }else if(FiberNotInUHTR){ // Nonexistent channels
             ZS = 255;
@@ -524,37 +603,101 @@ int main(int argc, char *argv[])
             mystring = matching[to_string(crate)+"_"+to_string(slot)+"_"+to_string(fiber)+"_"+to_string(channel)];
             //if(crate==20 && slot==2) cout << to_string(crate)+"_"+to_string(slot)+"_"+to_string(fiber)+"_"+to_string(channel) << " -> " << mystring << endl;
             istringstream iss(mystring);
-            int ietaidx, iphiidx, depthidx=-1000;
+            int ietaidx, depthidx=-1000; //iphiidx, 
             while( iss >> eta >> phi >> dep ){
               ietaidx = eta<0?eta+41:eta+40;
-              iphiidx = phi-1;
+              //iphiidx = phi-1;
               depthidx = dep-1;
             }
             if(depthidx==-1000){ // No valid depth: Also Masked? HE: RM2 RMFI5 CH5, RM2 RMFI7 CH1, RM3 RMFI2 CH1, RM3 RMFI4 CH0
               ZS = 255;
             }else{
-              // Example configuration: HE 8, HB small 9, HB large 10
               isHE = (((ietaidx>=12 && ietaidx<=24) || (ietaidx>=57 && ietaidx<=69) || (ietaidx==25 && depthidx>=3) || (ietaidx==56 && depthidx>=3)));
-              if (((ietaidx>=26 && ietaidx<=55) || (ietaidx==25 && depthidx<3) || (ietaidx==56 && depthidx<3)) && (depthidx>1 && depthidx<4)) ZS = 13;
-              else if (((ietaidx>=26 && ietaidx<=55) || (ietaidx==25 && depthidx<3) || (ietaidx==56 && depthidx<3)) && (depthidx>-1 && depthidx<2)) ZS = 12;
-              else if (isHE) ZS = 8;
-              // Horizontal HB:
-              if ((((crate==30) and (slot==4 || slot==5 || slot==10 || slot==11)) || ((crate==31) and (slot==1 || slot==2 || slot==7 || slot==8))) and ZS>8) ZS++;
-              // ZS is Mean+RMS of each channel, rounded up
-              // SiPM: Large or Small? Check both
-              //histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first]
-              /*
-              if ((histarrayADC[0][ietaidx][iphiidx][depthidx]->GetEntries() > 0) and (histarrayADC[1][ietaidx][iphiidx][depthidx]->GetEntries() == 0)){
-                ZS = ceil(histarrayADC[0][ietaidx][iphiidx][depthidx]->GetMean() + histarrayADC[0][ietaidx][iphiidx][depthidx]->GetRMS());
-              }else if ((histarrayADC[0][ietaidx][iphiidx][depthidx]->GetEntries() == 0) and (histarrayADC[1][ietaidx][iphiidx][depthidx]->GetEntries() > 0)){
-                ZS = ceil(histarrayADC[1][ietaidx][iphiidx][depthidx]->GetMean() + histarrayADC[1][ietaidx][iphiidx][depthidx]->GetRMS());
-              }else if ((histarrayADC[0][ietaidx][iphiidx][depthidx]->GetEntries() == 0) and (histarrayADC[1][ietaidx][iphiidx][depthidx]->GetEntries() == 0)){
-                cout << "WARNING! NONE! " << ietaidx << " " << iphiidx << " " << depthidx << endl;
-              }else if ((histarrayADC[0][ietaidx][iphiidx][depthidx]->GetEntries() > 0) and (histarrayADC[1][ietaidx][iphiidx][depthidx]->GetEntries() > 0)){
-                cout << "WARNING! BOTH! " << ietaidx << " " << iphiidx << " " << depthidx << endl;
+              subdet = isHE?"HE":"HB";
+              smallEntries = 0;
+              largeEntries = 0;
+              if(false){
+                // Example configuration: HE 8, HB small 9, HB large 10
+                if (((ietaidx>=26 && ietaidx<=55) || (ietaidx==25 && depthidx<3) || (ietaidx==56 && depthidx<3)) && (depthidx>1 && depthidx<4)) ZS = 13;
+                else if (((ietaidx>=26 && ietaidx<=55) || (ietaidx==25 && depthidx<3) || (ietaidx==56 && depthidx<3)) && (depthidx>-1 && depthidx<2)) ZS = 12;
+                else if (isHE) ZS = 8;
+                // Horizontal HB:
+                if ((((crate==30) and (slot==4 || slot==5 || slot==10 || slot==11)) || ((crate==31) and (slot==1 || slot==2 || slot==7 || slot==8))) and ZS>8) ZS++;
+              }else if(true){
+                // ZS is Mean+RMS of each channel, rounded up
+                // SiPM: Large or Small? Check both
+                //histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first]
+                if(histarrayADC[subdet]["_sipmLarge"][eta][phi].find(dep) != histarrayADC[subdet]["_sipmLarge"][eta][phi].end()){
+                  largeEntries = histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetEntries();
+                }
+                if(histarrayADC[subdet]["_sipmSmall"][eta][phi].find(dep) != histarrayADC[subdet]["_sipmSmall"][eta][phi].end()){
+                  smallEntries = histarrayADC[subdet]["_sipmSmall"][eta][phi][dep]->GetEntries();
+                }
+                if ((smallEntries > 0) and (largeEntries == 0)){
+                  ZS = ceil(histarrayADC[subdet]["_sipmSmall"][eta][phi][dep]->GetMean() + 5*histarrayADC[subdet]["_sipmSmall"][eta][phi][dep]->GetRMS());
+                }else if ((smallEntries == 0) and (largeEntries > 0)){
+                  ZS = ceil(histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + 5*histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS());
+                }else if ((smallEntries == 0) and (largeEntries == 0)){
+                  cout << "WARNING! NONE! " << smallEntries << "/" << largeEntries << ": " << eta << " " << phi << " " << dep << endl;
+                  ZS = 255;
+                }else if ((smallEntries > 0) and (largeEntries > 0)){
+                  cout << "WARNING! BOTH! " << smallEntries << "/" << largeEntries << ": " << eta << " " << phi << " " << dep << endl;
+                }
+              }else{
+                // ZS as above, but derived by FC, and then translated into ADC
+                //cout << ">>> " << subdet << " , " << eta << " , " << phi << " , " << dep << endl;
+                if(histarrayFC[subdet]["_sipmLarge"][eta][phi].find(dep) != histarrayFC[subdet]["_sipmLarge"][eta][phi].end()){
+                  //cout << "Getting large" << endl;
+                  largeEntries = histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetEntries();
+                  //cout << "large: " << largeEntries << endl;
+                }
+                if(histarrayFC[subdet]["_sipmSmall"][eta][phi].find(dep) != histarrayFC[subdet]["_sipmSmall"][eta][phi].end()){
+                  //cout << "Getting small" << endl;
+                  smallEntries = histarrayFC[subdet]["_sipmSmall"][eta][phi][dep]->GetEntries();
+                  //cout << "small: " << smallEntries << endl;
+                }
+                if ((smallEntries > 0) and (largeEntries == 0)){
+                  //cout << "Getting small" << endl;
+                  float fc = histarrayFC[subdet]["_sipmSmall"][eta][phi][dep]->GetMean() + histarrayFC[subdet]["_sipmSmall"][eta][phi][dep]->GetRMS();
+                  ZS = ceil(fc2adc->Eval(fc));
+                }else if ((smallEntries == 0) and (largeEntries > 0)){
+                  //cout << "Getting large" << endl;
+                  float fc = histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS();
+                  ZS = ceil(fc2adc->Eval(fc));
+                }else if ((smallEntries == 0) and (largeEntries == 0)){
+                  cout << "WARNING! NONE! " << smallEntries << "/" << largeEntries << ": " << eta << " " << phi << " " << dep << endl;
+                  ZS = 255;
+                }else if ((smallEntries > 0) and (largeEntries > 0)){
+                  cout << "WARNING! BOTH! " << smallEntries << "/" << largeEntries << ": " << eta << " " << phi << " " << dep << endl;
+                }
               }
-              */
             }
+          }
+          // Double check ZS of masked channels:
+          // HB: Masked in DQM: 
+          // RM 1, RMFI 2, CH 2 -> slot 2, FI 2,  CH 2   (eta 14, depth 1)
+          // RM 2, RMFI 8, CH 0 -> slot 1, FI 21, CH 0   (eta 12, depth 4)
+          // RM 3, RMFI 2, CH 2 -> slot 2, FI 6,  CH 2   (eta 14, depth 1)
+          // RM 4, RMFI 8, CH 0 -> slot 1, FI 23, CH 0   (eta 12, depth 4)
+          // HE: Masked in DQM:
+          // RM 1, RMFI 6, CH 4 -> slot 2, FI 14, CH 4   (eta 18, depth 1)
+          // RM 2, RMFI 4, CH 0 -> slot 2, FI 15, CH 0   (eta 18, depth 1)
+          // RM 3, RMFI 6, CH 4 -> slot 2, FI 20, CH 4   (eta 18, depth 1)
+          // RM 4, RMFI 4, CH 0 -> slot 2, FI 21, CH 0   (eta 18, depth 1)
+          // RM 2, RMFI 5, CH 5 -> slot 2, FI 16, CH 5   (depth -999)
+          // RM 2, RMFI 7, CH 1 -> slot 2, FI 17, CH 1   (depth -999)
+          // RM 3, RMFI 2, CH 1 -> slot 2, FI 18, CH 1   (depth -999)
+          // RM 3, RMFI 4, CH 0 -> slot 2, FI 19, CH 0   (depth -999)
+          // Masked: HBM04 RM3 RMFI 1
+          // -> CR 20, slot 1 (only 1, not mod 3), FI 2, CH 0-7
+          // ( or is it CR 20, slot 2, FI 6 ???, corresponds to HBM04 RM3 RMFI 2
+          if( ((modulo==2 and (fiber==2 || fiber==6) and channel==2) || (modulo==1 and (fiber==21 || fiber==23) and channel==0))  ||  (modulo==2 and ((fiber==14 and channel==4) || (fiber==15 and channel==0) || (fiber==20 and channel==4) || (fiber==21 and channel==0) || (fiber==16 and channel==5) || (fiber==17 and channel==1) || (fiber==18 and channel==1) || (fiber==19 and channel==0)))  ||  (crate==20 and slot==1 and fiber==2) ){
+            cout << "Doublecheck mask: " << ZS;
+            if(ZS!=0 and ZS!=255){
+              cout << " -> CR " << crate << ", slot " << slot << ", FI " << fiber << ", CH " << channel << "; changed to 255";
+              ZS = 255;
+            }
+            cout << endl;
           }
           xmlfile << hex << ZS;
           filled++;
@@ -611,6 +754,9 @@ int main(int argc, char *argv[])
       }
     }
   }
+  ADCvsFC->Write();
+  adc2fc->Write();
+  fc2adc->Write();
   /*for(int t=0; t<3; t++){ // 0=Small SiPM, 1=Large SiPM, 2=HF&HO
     for(int i=0; i<82; i++){ // Number of ieta bins -41..41, excluding 0
       for(int j=0; j<72; j++){ // Number of iphi bins 1..72
