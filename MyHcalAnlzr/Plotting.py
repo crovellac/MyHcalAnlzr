@@ -181,7 +181,7 @@ if not os.path.isdir(output): os.mkdir(output)
 fin=ROOT.TFile.Open(inputfile, "READ")
 
 if dowhat == "daysince":
-  xtitle = "Days since 1st January 2023" #"Days since 5th July"
+  xtitle = "Days since 6th April 2023" #"Days since 5th July"
 elif dowhat == "lumi":
   xtitle = "Luminosity [fb^{-1}]"
 
@@ -310,7 +310,8 @@ for title in grdict:
       legend[-1].AddEntry(gr[part][meanrms], label, "pl")
     # Vertical lines at 1st of every month
     monthlines = []
-    for linehere in [32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]:
+    for linehere in [31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]:
+      linehere = linehere - 96 # Start counting from 6th April instead of 1st January
       if lowedge > linehere or upedge < linehere: continue
       monthlines.append(ROOT.TLine(linehere, thismin - (thismax-thismin)*0.2, linehere, thismax + (thismax-thismin)*0.3))
       monthlines[-1].SetLineStyle(3)
@@ -548,7 +549,7 @@ for unit in ["ADC", "FC"]:
     c[-1].SaveAs(output+"PedestalPerPhi_"+alpha+"_"+subdet+"_"+unit+".pdf")
 
 # Extrapolation plots (makes more sense for lumi)
-if dowhat=="lumi":
+if dowhat=="lumi" and False: # Disabled: Need to revisit for 2023
   exhists = []
   for trend in ["HB_sipmLarge", "HB_sipmSmall", "HE_sipmLarge", "HE_sipmSmall", "HF", "HO", "HB_sipmLarge_phi,1,72", "HB_sipmLarge_phi,36,37"]:
     exhists.append(None)

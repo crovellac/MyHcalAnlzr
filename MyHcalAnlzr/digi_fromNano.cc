@@ -16,6 +16,7 @@
 #include <assert.h> 
 #include <iomanip>
 #include <filesystem>
+#include <numeric>
 
 #include <stdlib.h>
 
@@ -30,13 +31,17 @@ int main(int argc, char *argv[])
 
   //string runid = argv[1]; // Integer
   string floatday = argv[1]; // String, e.g. "22.02"
-  bool RemovePED = true; //  True measured charges (DigiHB_fc0) need to be subtracted by pedestal value (DigiHB_pedestalfc0)
+  float XtimesRMS = 5.0; // Set new ZS thresholds to "Mean + X * RMS + Y"
+  float RMSplusY = 0.0; // Set new ZS thresholds to "Mean + X * RMS + Y"
+  float LessForHBM09RM3 = 0.0;
+  int maxevents = -1; // -1 for all
+  
 
   // New: Get input based on date in name, then find run number
-  std::string fileName;
-  for (const auto & entry : std::filesystem::directory_iterator("/eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/")){
+  string fileName;
+  for (const auto & entry : filesystem::directory_iterator("/eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/")){
     fileName = entry.path().filename().string();
-    if (fileName.find(floatday) != std::string::npos){
+    if (fileName.find(floatday) != string::npos){
       break;
     }
   }
@@ -47,7 +52,7 @@ int main(int argc, char *argv[])
   TFile *f = new TFile(("/eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/"+fileName).c_str(), "read");
   TNtuple* qiedigi = (TNtuple*)f->Get("Events");
   int ntot = qiedigi->GetEntries();
-  std::cout << "Reading in input file, total " << ntot << " Entries." << std::endl;
+  cout << "Reading in input file, total " << ntot << " Entries." << endl;
   //float RunNum, LumiNum, EvtNum;
   //float ieta, iphi, depth, sumADC, type, shunt;
   int nDigiHB, nDigiHE, nDigiHF, nDigiHO;
@@ -70,6 +75,11 @@ int main(int argc, char *argv[])
   qiedigi->SetBranchAddress("DigiHE_depth", &DigiHE_depth);
   qiedigi->SetBranchAddress("DigiHF_depth", &DigiHF_depth);
   qiedigi->SetBranchAddress("DigiHO_depth", &DigiHO_depth);
+  int DigiHB_rawId[9072], DigiHE_rawId[6768], DigiHF_rawId[3456], DigiHO_rawId[2160];
+  qiedigi->SetBranchAddress("DigiHB_rawId", &DigiHB_rawId);
+  qiedigi->SetBranchAddress("DigiHE_rawId", &DigiHE_rawId);
+  qiedigi->SetBranchAddress("DigiHF_rawId", &DigiHF_rawId);
+  qiedigi->SetBranchAddress("DigiHO_rawId", &DigiHO_rawId);
   float DigiHB_fc0[9072], DigiHB_fc1[9072], DigiHB_fc2[9072], DigiHB_fc3[9072];
   float DigiHB_fc4[9072], DigiHB_fc5[9072], DigiHB_fc6[9072], DigiHB_fc7[9072];
   qiedigi->SetBranchAddress("DigiHB_fc0", &DigiHB_fc0);
@@ -100,6 +110,16 @@ int main(int argc, char *argv[])
   qiedigi->SetBranchAddress("DigiHB_adc5", &DigiHB_adc5);
   qiedigi->SetBranchAddress("DigiHB_adc6", &DigiHB_adc6);
   qiedigi->SetBranchAddress("DigiHB_adc7", &DigiHB_adc7);
+  int DigiHB_capid0[9072], DigiHB_capid1[9072], DigiHB_capid2[9072], DigiHB_capid3[9072];
+  int DigiHB_capid4[9072], DigiHB_capid5[9072], DigiHB_capid6[9072], DigiHB_capid7[9072];
+  qiedigi->SetBranchAddress("DigiHB_capid0", &DigiHB_capid0);
+  qiedigi->SetBranchAddress("DigiHB_capid1", &DigiHB_capid1);
+  qiedigi->SetBranchAddress("DigiHB_capid2", &DigiHB_capid2);
+  qiedigi->SetBranchAddress("DigiHB_capid3", &DigiHB_capid3);
+  qiedigi->SetBranchAddress("DigiHB_capid4", &DigiHB_capid4);
+  qiedigi->SetBranchAddress("DigiHB_capid5", &DigiHB_capid5);
+  qiedigi->SetBranchAddress("DigiHB_capid6", &DigiHB_capid6);
+  qiedigi->SetBranchAddress("DigiHB_capid7", &DigiHB_capid7);
   float DigiHE_fc0[6768], DigiHE_fc1[6768], DigiHE_fc2[6768], DigiHE_fc3[6768];
   float DigiHE_fc4[6768], DigiHE_fc5[6768], DigiHE_fc6[6768], DigiHE_fc7[6768];
   qiedigi->SetBranchAddress("DigiHE_fc0", &DigiHE_fc0);
@@ -130,6 +150,16 @@ int main(int argc, char *argv[])
   qiedigi->SetBranchAddress("DigiHE_adc5", &DigiHE_adc5);
   qiedigi->SetBranchAddress("DigiHE_adc6", &DigiHE_adc6);
   qiedigi->SetBranchAddress("DigiHE_adc7", &DigiHE_adc7);
+  int DigiHE_capid0[6768], DigiHE_capid1[6768], DigiHE_capid2[6768], DigiHE_capid3[6768];
+  int DigiHE_capid4[6768], DigiHE_capid5[6768], DigiHE_capid6[6768], DigiHE_capid7[6768];
+  qiedigi->SetBranchAddress("DigiHE_capid0", &DigiHE_capid0);
+  qiedigi->SetBranchAddress("DigiHE_capid1", &DigiHE_capid1);
+  qiedigi->SetBranchAddress("DigiHE_capid2", &DigiHE_capid2);
+  qiedigi->SetBranchAddress("DigiHE_capid3", &DigiHE_capid3);
+  qiedigi->SetBranchAddress("DigiHE_capid4", &DigiHE_capid4);
+  qiedigi->SetBranchAddress("DigiHE_capid5", &DigiHE_capid5);
+  qiedigi->SetBranchAddress("DigiHE_capid6", &DigiHE_capid6);
+  qiedigi->SetBranchAddress("DigiHE_capid7", &DigiHE_capid7);
   float DigiHF_fc0[3456], DigiHF_fc1[3456], DigiHF_fc2[3456];
   qiedigi->SetBranchAddress("DigiHF_fc0", &DigiHF_fc0);
   qiedigi->SetBranchAddress("DigiHF_fc1", &DigiHF_fc1);
@@ -142,6 +172,10 @@ int main(int argc, char *argv[])
   qiedigi->SetBranchAddress("DigiHF_adc0", &DigiHF_adc0);
   qiedigi->SetBranchAddress("DigiHF_adc1", &DigiHF_adc1);
   qiedigi->SetBranchAddress("DigiHF_adc2", &DigiHF_adc2);
+  int DigiHF_capid0[3456], DigiHF_capid1[3456], DigiHF_capid2[3456];
+  qiedigi->SetBranchAddress("DigiHF_capid0", &DigiHF_capid0);
+  qiedigi->SetBranchAddress("DigiHF_capid1", &DigiHF_capid1);
+  qiedigi->SetBranchAddress("DigiHF_capid2", &DigiHF_capid2);
   float DigiHO_fc0[2160], DigiHO_fc1[2160], DigiHO_fc2[2160], DigiHO_fc3[2160], DigiHO_fc4[2160];
   float DigiHO_fc5[2160], DigiHO_fc6[2160], DigiHO_fc7[2160], DigiHO_fc8[2160], DigiHO_fc9[2160];
   qiedigi->SetBranchAddress("DigiHO_fc0", &DigiHO_fc0);
@@ -178,6 +212,18 @@ int main(int argc, char *argv[])
   qiedigi->SetBranchAddress("DigiHO_adc7", &DigiHO_adc7);
   qiedigi->SetBranchAddress("DigiHO_adc8", &DigiHO_adc8);
   qiedigi->SetBranchAddress("DigiHO_adc9", &DigiHO_adc9);
+  int DigiHO_capid0[2160], DigiHO_capid1[2160], DigiHO_capid2[2160], DigiHO_capid3[2160], DigiHO_capid4[2160];
+  int DigiHO_capid5[2160], DigiHO_capid6[2160], DigiHO_capid7[2160], DigiHO_capid8[2160], DigiHO_capid9[2160];
+  qiedigi->SetBranchAddress("DigiHO_capid0", &DigiHO_capid0);
+  qiedigi->SetBranchAddress("DigiHO_capid1", &DigiHO_capid1);
+  qiedigi->SetBranchAddress("DigiHO_capid2", &DigiHO_capid2);
+  qiedigi->SetBranchAddress("DigiHO_capid3", &DigiHO_capid3);
+  qiedigi->SetBranchAddress("DigiHO_capid4", &DigiHO_capid4);
+  qiedigi->SetBranchAddress("DigiHO_capid5", &DigiHO_capid5);
+  qiedigi->SetBranchAddress("DigiHO_capid6", &DigiHO_capid6);
+  qiedigi->SetBranchAddress("DigiHO_capid7", &DigiHO_capid7);
+  qiedigi->SetBranchAddress("DigiHO_capid8", &DigiHO_capid8);
+  qiedigi->SetBranchAddress("DigiHO_capid9", &DigiHO_capid9);
   UChar_t eventtype, DigiHB_sipmTypes[9072], DigiHE_sipmTypes[6768];
   qiedigi->SetBranchAddress("uMNio_EventType", &eventtype);
   qiedigi->SetBranchAddress("DigiHB_sipmTypes", &DigiHB_sipmTypes);
@@ -186,33 +232,13 @@ int main(int argc, char *argv[])
 
   TFile *ofile = new TFile(("hist_CalibOutput_run"+runid+"_"+floatday+".root").c_str(), "recreate");
 
-  std::cout << "Creating base histograms..." << std::endl;
+  cout << "Creating base histograms..." << endl;
 
-  //string det;
-  //TH1F ***** histarray;
-  //histarray = new TH1F****[3];
   vector<string> subdets{"HB", "HE", "HF", "HO"};
-  map<string, map<string, map<int, map<int, map<int, TH1F*>>>>> histarrayFC, histarrayADC; // Subdet, SiPM size, ieta, iphi, depth
-  /*for(int t=0; t<3; t++){ // 0=Small SiPM, 1=Large SiPM, 2=HF&HO
-    histarray[t] = new TH1F***[82];
-    if (t==0) size = "_sipmSmall";
-    else if (t==1) size = "_sipmLarge";
-    else size = "";
-    for(int i=0; i<82; i++){ // Number of ieta bins -41..41, excluding 0
-      histarray[t][i] = new TH1F**[72];
-      for(int j=0; j<72; j++){ // Number of iphi bins 1..72
-        histarray[t][i][j] = new TH1F*[7];
-        for(int k=0; k<7; k++){ // Number of depths 1..7
-          if (t==2 && (i<13 || i>68)) det = "HF";
-          else if (t==2 && (i>25 && i<56)) det = "HO";
-          else if (t<2 && ((i>=26 && i<=55) || (i==25 && k<3) || (i==56 && k<3))) det = "HB";
-          else if (t<2 && ((i>=12 && i<=24) || (i>=57 && i<=69) || (i==25 && k>=3) || (i==56 && k>=3))) det = "HE";
-          else det = "";
-          histarray[t][i][j][k] = new TH1F(("hist_run"+runid+"_subdet"+det+size+"_ieta"+to_string(i<=41?i-41:i-40)+"_iphi"+to_string(j+1)+"_depth"+to_string(k+1)).c_str(), "Pedestal per Channel; ADC; Entries", 1600, 0, 40);
-        }
-      }
-    }
-  }*/
+  map<string, map<string, map<int, map<int, map<int, TH1F*>>>>> histarrayFC, histarrayADC; // Subdet, SiPM size, ieta, iphi, depth;  value is histogram filled with fC/ADC values
+  map<string, map<int, map<int, map<int, map<int, vector<float>>>>>> CapIDarrayFC; // Subdet, ieta, iphi, depth, capid;  value is vector of fC values
+  map<string, map<int, map<int, map<int, int>>>> rawIDarray; // Subdet, ieta, iphi, depth;  value is int of RawId
+  map<string, map<int, map<int, map<int, int>>>> CheckMissing; // Subdet, ieta, iphi, depth;  value is int of RawId
 
   TH2F* ADCvsFC = new TH2F("ADC vs FC", "Conversion; ADC; FC", 32, 0, 32, 10000, 0, 1000);
   double fC_vals[256] = { // https://github.com/cms-sw/cmssw/blob/f5b4310413558919869e0dfa7c9c231e4b2b03fc/DQM/HcalCommon/interface/Constants.h#L253
@@ -240,22 +266,51 @@ int main(int argc, char *argv[])
   double ADC_vals[256];
   for (int i = 0; i < 256; i++){
     ADC_vals[i] = i;
+    fC_vals[i] = fC_vals[i]*6.0; // Table is for shunt 1, but measurements are shunt 6
   }
   TGraph* adc2fc = new TGraph(256, ADC_vals, fC_vals);
   TGraph* fc2adc = new TGraph(256, fC_vals, ADC_vals);
   adc2fc->SetTitle("ADC to FC; ADC; FC");
   fc2adc->SetTitle("FC to ADC; FC; ADC");
 
-  std::cout << "Looping over input events..." << std::endl;
+
+  // Get list of ALL channels that SHOULD exist (mainly for DPG table)
+  ifstream DPGinfile("ref_table.txt"); 
+  int meta, mphi, mdep, mrawid;
+  string mline, msubdet;
+  float mgarbage;
+  while (getline(DPGinfile, mline))
+  {
+    istringstream iss(mline);
+    iss >> dec >> meta;
+    iss >> mphi;
+    iss >> mdep;
+    iss >> msubdet;
+    iss >> mgarbage;
+    iss >> mgarbage;
+    iss >> mgarbage;
+    iss >> mgarbage;
+    iss >> mgarbage;
+    iss >> mgarbage;
+    iss >> mgarbage;
+    iss >> mgarbage;
+    iss >> hex >> mrawid;
+    CheckMissing[msubdet][meta][mphi][mdep] = mrawid;
+  }
+
+  cout << "Looping over input events..." << endl;
 
   string size;
   int N, ieta, iphi, depth, evtype, sipmtype;
   float fcsum, adcsum;
+  int doneevents=0;
   for(int i=0; i<ntot; i++){
-    if(i%100==0) std::cout << i << "-th event." << std::endl;
+    if(i%100==0) cout << i << "-th event." << endl;
     qiedigi->GetEntry(i);
     evtype = eventtype; // UChar_t -> Int conversion
     if(evtype!=1) continue; // PED events only
+    doneevents++;
+    if(doneevents==maxevents+1) break;
 
     for (auto const& subdet : subdets){
       if(subdet=="HB") N = nDigiHB;
@@ -287,6 +342,7 @@ int main(int argc, char *argv[])
           iphi = DigiHO_iphi[j];
           depth = DigiHO_depth[j];
         }
+        if (ieta==0) continue;
         //if (histarrayFC.find(subdet.first) == histarrayFC.end()) histarrayFC[subdet.first];
         //if (histarrayFC[subdet.first].find(size) == histarrayFC[subdet.first].end()) histarrayFC[subdet.first][size];
         //if (histarrayFC[subdet.first][size].find(ieta) == histarrayFC[subdet.first][size].end()) histarrayFC[subdet.first][size][ieta];
@@ -295,159 +351,86 @@ int main(int argc, char *argv[])
           histarrayFC[subdet][size][ieta][iphi][depth] = new TH1F(("hist_run"+runid+"_subdet"+subdet+size+"_ieta"+to_string(ieta)+"_iphi"+to_string(iphi)+"_depth"+to_string(depth)+"_FC").c_str(), "Pedestal per Channel; fC; Entries", 10000, 0, 1000); // TODO
           histarrayADC[subdet][size][ieta][iphi][depth] = new TH1F(("hist_run"+runid+"_subdet"+subdet+size+"_ieta"+to_string(ieta)+"_iphi"+to_string(iphi)+"_depth"+to_string(depth)+"_ADC").c_str(), "Pedestal per Channel; ADC; Entries", 960, 0, 32);
         }
-        /*if(subdet=="HB"){
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_fc0[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_fc1[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_fc2[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_fc3[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_fc4[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_fc5[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_fc6[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_fc7[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_adc0[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_adc1[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_adc2[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_adc3[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_adc4[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_adc5[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_adc6[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHB_adc7[j]);
-        }else if (subdet=="HE"){
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_fc0[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_fc1[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_fc2[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_fc3[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_fc4[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_fc5[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_fc6[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_fc7[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_adc0[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_adc1[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_adc2[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_adc3[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_adc4[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_adc5[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_adc6[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHE_adc7[j]);
-        }else if (subdet=="HF"){
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHF_fc0[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHF_fc1[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHF_fc2[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHF_adc0[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHF_adc1[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHF_adc2[j]);
-        }else if (subdet=="HO"){
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_fc0[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_fc1[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_fc2[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_fc3[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_fc4[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_fc5[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_fc6[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_fc7[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_fc8[j]);
-          histarrayFC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_fc9[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_adc0[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_adc1[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_adc2[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_adc3[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_adc4[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_adc5[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_adc6[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_adc7[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_adc8[j]);
-          histarrayADC[subdet][size][ieta][iphi][depth]->Fill(DigiHO_adc9[j]);
-        }*/
+
         if(subdet=="HB"){
-          if(RemovePED){
-            fcsum = (DigiHB_fc0[j]+DigiHB_fc1[j]+DigiHB_fc2[j]+DigiHB_fc3[j]+DigiHB_fc4[j]+DigiHB_fc5[j]+DigiHB_fc6[j]+DigiHB_fc7[j] - DigiHB_pedestalfc0[j]-DigiHB_pedestalfc1[j]-DigiHB_pedestalfc2[j]-DigiHB_pedestalfc3[j]-DigiHB_pedestalfc4[j]-DigiHB_pedestalfc5[j]-DigiHB_pedestalfc6[j]-DigiHB_pedestalfc7[j]) / 8.0;
-            ADCvsFC->Fill(DigiHB_adc0[j], DigiHB_fc0[j]-DigiHB_pedestalfc0[j]);
-            ADCvsFC->Fill(DigiHB_adc1[j], DigiHB_fc1[j]-DigiHB_pedestalfc1[j]);
-            ADCvsFC->Fill(DigiHB_adc2[j], DigiHB_fc2[j]-DigiHB_pedestalfc2[j]);
-            ADCvsFC->Fill(DigiHB_adc3[j], DigiHB_fc3[j]-DigiHB_pedestalfc3[j]);
-            ADCvsFC->Fill(DigiHB_adc4[j], DigiHB_fc4[j]-DigiHB_pedestalfc4[j]);
-            ADCvsFC->Fill(DigiHB_adc5[j], DigiHB_fc5[j]-DigiHB_pedestalfc5[j]);
-            ADCvsFC->Fill(DigiHB_adc6[j], DigiHB_fc6[j]-DigiHB_pedestalfc6[j]);
-            ADCvsFC->Fill(DigiHB_adc7[j], DigiHB_fc7[j]-DigiHB_pedestalfc7[j]);
-          }else{
-            fcsum = (DigiHB_fc0[j]+DigiHB_fc1[j]+DigiHB_fc2[j]+DigiHB_fc3[j]+DigiHB_fc4[j]+DigiHB_fc5[j]+DigiHB_fc6[j]+DigiHB_fc7[j]) / 8.0;
-            ADCvsFC->Fill(DigiHB_adc0[j], DigiHB_fc0[j]);
-            ADCvsFC->Fill(DigiHB_adc1[j], DigiHB_fc1[j]);
-            ADCvsFC->Fill(DigiHB_adc2[j], DigiHB_fc2[j]);
-            ADCvsFC->Fill(DigiHB_adc3[j], DigiHB_fc3[j]);
-            ADCvsFC->Fill(DigiHB_adc4[j], DigiHB_fc4[j]);
-            ADCvsFC->Fill(DigiHB_adc5[j], DigiHB_fc5[j]);
-            ADCvsFC->Fill(DigiHB_adc6[j], DigiHB_fc6[j]);
-            ADCvsFC->Fill(DigiHB_adc7[j], DigiHB_fc7[j]);
-          }
+          fcsum = (DigiHB_fc0[j]+DigiHB_fc1[j]+DigiHB_fc2[j]+DigiHB_fc3[j]+DigiHB_fc4[j]+DigiHB_fc5[j]+DigiHB_fc6[j]+DigiHB_fc7[j]) / 8.0;
           adcsum = (DigiHB_adc0[j]+DigiHB_adc1[j]+DigiHB_adc2[j]+DigiHB_adc3[j]+DigiHB_adc4[j]+DigiHB_adc5[j]+DigiHB_adc6[j]+DigiHB_adc7[j]) / 8.0;
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid0[j]].push_back(DigiHB_fc0[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid1[j]].push_back(DigiHB_fc1[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid2[j]].push_back(DigiHB_fc2[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid3[j]].push_back(DigiHB_fc3[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid4[j]].push_back(DigiHB_fc4[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid5[j]].push_back(DigiHB_fc5[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid6[j]].push_back(DigiHB_fc6[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid7[j]].push_back(DigiHB_fc7[j]);
+          rawIDarray[subdet][ieta][iphi][depth] = DigiHB_rawId[j];
+          ADCvsFC->Fill(DigiHB_adc0[j], DigiHB_fc0[j]);
+          ADCvsFC->Fill(DigiHB_adc1[j], DigiHB_fc1[j]);
+          ADCvsFC->Fill(DigiHB_adc2[j], DigiHB_fc2[j]);
+          ADCvsFC->Fill(DigiHB_adc3[j], DigiHB_fc3[j]);
+          ADCvsFC->Fill(DigiHB_adc4[j], DigiHB_fc4[j]);
+          ADCvsFC->Fill(DigiHB_adc5[j], DigiHB_fc5[j]);
+          ADCvsFC->Fill(DigiHB_adc6[j], DigiHB_fc6[j]);
+          ADCvsFC->Fill(DigiHB_adc7[j], DigiHB_fc7[j]);
         }else if (subdet=="HE"){
-          if(RemovePED){
-            fcsum = (DigiHE_fc0[j]+DigiHE_fc1[j]+DigiHE_fc2[j]+DigiHE_fc3[j]+DigiHE_fc4[j]+DigiHE_fc5[j]+DigiHE_fc6[j]+DigiHE_fc7[j] - DigiHE_pedestalfc0[j]-DigiHE_pedestalfc1[j]-DigiHE_pedestalfc2[j]-DigiHE_pedestalfc3[j]-DigiHE_pedestalfc4[j]-DigiHE_pedestalfc5[j]-DigiHE_pedestalfc6[j]-DigiHE_pedestalfc7[j]) / 8.0;
-            ADCvsFC->Fill(DigiHE_adc0[j], DigiHE_fc0[j]-DigiHE_pedestalfc0[j]);
-            ADCvsFC->Fill(DigiHE_adc1[j], DigiHE_fc1[j]-DigiHE_pedestalfc1[j]);
-            ADCvsFC->Fill(DigiHE_adc2[j], DigiHE_fc2[j]-DigiHE_pedestalfc2[j]);
-            ADCvsFC->Fill(DigiHE_adc3[j], DigiHE_fc3[j]-DigiHE_pedestalfc3[j]);
-            ADCvsFC->Fill(DigiHE_adc4[j], DigiHE_fc4[j]-DigiHE_pedestalfc4[j]);
-            ADCvsFC->Fill(DigiHE_adc5[j], DigiHE_fc5[j]-DigiHE_pedestalfc5[j]);
-            ADCvsFC->Fill(DigiHE_adc6[j], DigiHE_fc6[j]-DigiHE_pedestalfc6[j]);
-            ADCvsFC->Fill(DigiHE_adc7[j], DigiHE_fc7[j]-DigiHE_pedestalfc7[j]);
-          }else{
-            fcsum = (DigiHE_fc0[j]+DigiHE_fc1[j]+DigiHE_fc2[j]+DigiHE_fc3[j]+DigiHE_fc4[j]+DigiHE_fc5[j]+DigiHE_fc6[j]+DigiHE_fc7[j]) / 8.0;
-            ADCvsFC->Fill(DigiHE_adc0[j], DigiHE_fc0[j]);
-            ADCvsFC->Fill(DigiHE_adc1[j], DigiHE_fc1[j]);
-            ADCvsFC->Fill(DigiHE_adc2[j], DigiHE_fc2[j]);
-            ADCvsFC->Fill(DigiHE_adc3[j], DigiHE_fc3[j]);
-            ADCvsFC->Fill(DigiHE_adc4[j], DigiHE_fc4[j]);
-            ADCvsFC->Fill(DigiHE_adc5[j], DigiHE_fc5[j]);
-            ADCvsFC->Fill(DigiHE_adc6[j], DigiHE_fc6[j]);
-            ADCvsFC->Fill(DigiHE_adc7[j], DigiHE_fc7[j]);
-          }
+          fcsum = (DigiHE_fc0[j]+DigiHE_fc1[j]+DigiHE_fc2[j]+DigiHE_fc3[j]+DigiHE_fc4[j]+DigiHE_fc5[j]+DigiHE_fc6[j]+DigiHE_fc7[j]) / 8.0;
           adcsum = (DigiHE_adc0[j]+DigiHE_adc1[j]+DigiHE_adc2[j]+DigiHE_adc3[j]+DigiHE_adc4[j]+DigiHE_adc5[j]+DigiHE_adc6[j]+DigiHE_adc7[j]) / 8.0;
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid0[j]].push_back(DigiHE_fc0[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid1[j]].push_back(DigiHE_fc1[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid2[j]].push_back(DigiHE_fc2[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid3[j]].push_back(DigiHE_fc3[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid4[j]].push_back(DigiHE_fc4[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid5[j]].push_back(DigiHE_fc5[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid6[j]].push_back(DigiHE_fc6[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid7[j]].push_back(DigiHE_fc7[j]);
+          rawIDarray[subdet][ieta][iphi][depth] = DigiHE_rawId[j];
+          ADCvsFC->Fill(DigiHE_adc0[j], DigiHE_fc0[j]);
+          ADCvsFC->Fill(DigiHE_adc1[j], DigiHE_fc1[j]);
+          ADCvsFC->Fill(DigiHE_adc2[j], DigiHE_fc2[j]);
+          ADCvsFC->Fill(DigiHE_adc3[j], DigiHE_fc3[j]);
+          ADCvsFC->Fill(DigiHE_adc4[j], DigiHE_fc4[j]);
+          ADCvsFC->Fill(DigiHE_adc5[j], DigiHE_fc5[j]);
+          ADCvsFC->Fill(DigiHE_adc6[j], DigiHE_fc6[j]);
+          ADCvsFC->Fill(DigiHE_adc7[j], DigiHE_fc7[j]);
         }else if (subdet=="HF"){
-          if(RemovePED){
-            fcsum = (DigiHF_fc0[j]+DigiHF_fc1[j]+DigiHF_fc2[j] - DigiHF_pedestalfc0[j]-DigiHF_pedestalfc1[j]-DigiHF_pedestalfc2[j]) / 3.0;
-          }else{
-            fcsum = (DigiHF_fc0[j]+DigiHF_fc1[j]+DigiHF_fc2[j]) / 3.0;
-          }
+          fcsum = (DigiHF_fc0[j]+DigiHF_fc1[j]+DigiHF_fc2[j]) / 3.0;
           adcsum = (DigiHF_adc0[j]+DigiHF_adc1[j]+DigiHF_adc2[j]) / 3.0;
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHF_capid0[j]].push_back(DigiHF_fc0[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHF_capid1[j]].push_back(DigiHF_fc1[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHF_capid2[j]].push_back(DigiHF_fc2[j]);
+          rawIDarray[subdet][ieta][iphi][depth] = DigiHF_rawId[j];
         }else if (subdet=="HO"){
-          if(RemovePED){
-            fcsum = (DigiHO_fc0[j]+DigiHO_fc1[j]+DigiHO_fc2[j]+DigiHO_fc3[j]+DigiHO_fc4[j]+DigiHO_fc5[j]+DigiHO_fc6[j]+DigiHO_fc7[j]+DigiHO_fc8[j]+DigiHO_fc9[j] - DigiHO_pedestalfc0[j]-DigiHO_pedestalfc1[j]-DigiHO_pedestalfc2[j]-DigiHO_pedestalfc3[j]-DigiHO_pedestalfc4[j]-DigiHO_pedestalfc5[j]-DigiHO_pedestalfc6[j]-DigiHO_pedestalfc7[j]-DigiHO_pedestalfc8[j]-DigiHO_fc9[j]) / 10.0;
-          }else{
-            fcsum = (DigiHO_fc0[j]+DigiHO_fc1[j]+DigiHO_fc2[j]+DigiHO_fc3[j]+DigiHO_fc4[j]+DigiHO_fc5[j]+DigiHO_fc6[j]+DigiHO_fc7[j]+DigiHO_fc8[j]+DigiHO_fc9[j]) / 10.0;
-          }
+          fcsum = (DigiHO_fc0[j]+DigiHO_fc1[j]+DigiHO_fc2[j]+DigiHO_fc3[j]+DigiHO_fc4[j]+DigiHO_fc5[j]+DigiHO_fc6[j]+DigiHO_fc7[j]+DigiHO_fc8[j]+DigiHO_fc9[j]) / 10.0;
           adcsum = (DigiHO_adc0[j]+DigiHO_adc1[j]+DigiHO_adc2[j]+DigiHO_adc3[j]+DigiHO_adc4[j]+DigiHO_adc5[j]+DigiHO_adc6[j]+DigiHO_adc7[j]+DigiHO_adc8[j]+DigiHO_adc9[j]) / 10.0;
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid0[j]].push_back(DigiHO_fc0[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid1[j]].push_back(DigiHO_fc1[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid2[j]].push_back(DigiHO_fc2[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid3[j]].push_back(DigiHO_fc3[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid4[j]].push_back(DigiHO_fc4[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid5[j]].push_back(DigiHO_fc5[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid6[j]].push_back(DigiHO_fc6[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid7[j]].push_back(DigiHO_fc7[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid8[j]].push_back(DigiHO_fc8[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid9[j]].push_back(DigiHO_fc9[j]);
+          rawIDarray[subdet][ieta][iphi][depth] = DigiHO_rawId[j];
         }
         histarrayFC[subdet][size][ieta][iphi][depth]->Fill(fcsum);
         histarrayADC[subdet][size][ieta][iphi][depth]->Fill(adcsum);
       }
     }
 
-    //if(shunt!=-1.0 and shunt!=6.0) continue; //-1.0 for global, 6.0 for local
-
-    //int ietaidx = ieta<0?ieta+41:ieta+40;
-    //int iphiidx = iphi-1;
-    //int depthidx = depth-1;
-    //int sipmidx = -1;
-    //if(type==3||type==5) sipmidx=0; // Small SiPM
-    //else if(type==4||type==6) sipmidx=1; // Large SiPM
-    //else if(type==0||type==2) sipmidx=2; // HF/HO
-
-    //std::cout << sipmidx << ", " << ietaidx << ", " << iphiidx << ", " << depthidx << std::endl;
-
-    /*if (type==3 || type==4 || type==5 || type==6){
-      histarray[sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/8.0); // Average ADC of all 8 TSs, HBHE
-    }else if (!(ietaidx>=26 && ietaidx<=55)){
-      histarray[sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/6.0); // Average ADC of all 6 TSs, HF
-    }else{
-      histarray[sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/10.0); // Average ADC of all 10 TSs, HO
-    }*/
-
   }
 
+  // Test for comparing measured FC-ADC conversion and table
+  /*cout << "Average FC per ADC bin:" << endl;
+  for(int adc=0; adc<ADCvsFC->GetXaxis()->GetNbins(); adc++){
+    ADCvsFC->GetXaxis()->SetRange(adc+1,adc+1);
+    cout << "ADC " << adc << " : Table fC = " << adc2fc->Eval(adc) << ", Measured fC = " <<  ADCvsFC->GetMean(2) << endl;
+  }
+  ADCvsFC->GetXaxis()->SetRange(0,0); // Reset*/
 
-  std::cout << "Writing table..." << std::endl;
+
+  cout << "Writing table..." << endl;
 
   ofstream tablefile;
   tablefile.open("Table_Run"+runid+"_"+floatday+".2023.txt");
@@ -470,30 +453,124 @@ int main(int argc, char *argv[])
     }
   }
   tablefile.close();
-  /*for(int t=0; t<3; t++){ // 0=Small SiPM, 1=Large SiPM, 2=HF&HO
-    for(int i=0; i<82; i++){ // Number of ieta bins -41..41, excluding 0
-      for(int j=0; j<72; j++){ // Number of iphi bins 1..72
-        for(int k=0; k<7; k++){ // Number of depths 1..7
-          if (histarray[t][i][j][k]->GetEntries() > 0){
-            det = "";
-            if (t==2 && (i<13 || i>68)) det = "HF";
-            else if (t==2 && (i>25 && i<56)) det = "HO";
-            else if (t<2 && ((i>=26 && i<=55) || (i==25 && k<3) || (i==56 && k<3))) det = "HB";
-            else if (t<2 && ((i>=12 && i<=24) || (i>=57 && i<=69) || (i==25 && k>=3) || (i==56 && k>=3))) det = "HE";
-            if (t==2) size = "";
-            else size = t==0?"Small":"Large";
-            tablefile << setw(8) << det << setw(8) << size << setw(8) << (i<41?i-41:i-40) << setw(8) << (j+1) << setw(8) << (k+1) << setw(12) << histarray[t][i][j][k]->GetMean() << setw(12) << histarray[t][i][j][k]->GetRMS() << "\n";
+
+
+  cout << "Writing DPG pedestal tables..." << endl;
+
+  float pedsum, pedmean, pedsqsum, pedstd;
+  float CapIDMean[4], CapIDStd[4];
+  int pedsize;
+  ofstream DPGfile;
+  ofstream DPGfileWidth;
+  DPGfile.open("PedestalTable_Run"+runid+"_"+floatday+".2023.txt");
+  DPGfileWidth.open("PedestalTableWidth_Run"+runid+"_"+floatday+".2023.txt");
+  DPGfile << "# Unit is fC" << "\n";
+  DPGfile << "#" << setw(16) << "ieta" << setw(16) << "iphi" << setw(16) << "depth" << setw(16) << "SubDet" << setw(9) << "CapId0" << setw(9) << "CapId1" << setw(9) << "CapId2" << setw(9) << "CapId3" << setw(9) << "WidthId0" << setw(9) << "WidthId1" << setw(9) << "WidthId2" << setw(9) << "WidthId3" << setw(11) << "RawId" << "\n";
+  DPGfileWidth << "# Unit is fC^2" << "\n";
+  DPGfileWidth << "#" << setw(16) << "ieta" << setw(16) << "iphi" << setw(16) << "depth" << setw(16) << "SubDet" << setw(9) << "Width0/0" << setw(9) << "Width0/1" << setw(9) << "Width0/2" << setw(9) << "Width0/3" << setw(9) << "Width1/0" << setw(9) << "Width1/1" << setw(9) << "Width1/2" << setw(9) << "Width1/3" << "Width2/0" << setw(9) << "Width2/1" << setw(9) << "Width2/2" << setw(9) << "Width2/3" << setw(9) << "Width3/0" << setw(9) << "Width3/1" << setw(9) << "Width3/2" << setw(9) << "Width3/3" << setw(11) << "RawId" << "\n";
+  for (auto const& subdet : subdets){
+    for (auto const& eta : CapIDarrayFC[subdet]){
+      for (auto const& phi : CapIDarrayFC[subdet][eta.first]){
+        for (auto const& dep : CapIDarrayFC[subdet][eta.first][phi.first]){
+          DPGfile << setw(17) << dec << eta.first << setw(16) << phi.first << setw(16) << dep.first << setw(16) << subdet;
+          DPGfileWidth << setw(17) << dec << eta.first << setw(16) << phi.first << setw(16) << dep.first << setw(16) << subdet;
+          for (int capid=0; capid<4; capid++) { // for (auto const& capid : CapIDarrayFC[subdet][eta.first][phi.first][dep.first]){
+            CapIDMean[capid] = 0.0;
+            CapIDStd[capid] = 0.0;
+            if (!CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].empty()){
+              pedsum = std::accumulate(CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].begin(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].end(), 0.0);
+              pedmean = pedsum / CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].size();
+              pedsqsum = std::inner_product(CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].begin(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].end(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].begin(), 0.0);
+              pedstd = sqrt(pedsqsum / CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].size() - pedmean * pedmean);
+            }else{ // For HF, one CapID is empty: Get average of other entries
+              pedsum = 0.0;
+              pedsqsum = 0.0;
+              pedsize = 0;
+              for (int capidtemp=0; capidtemp<4; capidtemp++) { // for (auto const& capidtemp : CapIDarrayFC[subdet][eta.first][phi.first][dep.first]){
+                if (!CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp].empty()){
+                  pedsum = pedsum + std::accumulate(CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp].begin(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp].end(), 0.0);
+                  pedsqsum = pedsqsum + std::inner_product(CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp].begin(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp].end(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp].begin(), 0.0);
+                  pedsize = pedsize + CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp].size();
+                }
+              }
+              // if(pedsize==0) break; // No CapID has entries: It's missing channel! Fill below by interpolation. (But code shouldn't pass through here, because it wouldn't even enter the capid loop above.)
+              pedmean = pedsum / pedsize;
+              pedstd = sqrt(pedsqsum / pedsize - pedmean * pedmean);
+            }
+            CapIDMean[capid] = pedmean;
+            CapIDStd[capid] = pedstd;
+          }
+          DPGfile << setw(9) << CapIDMean[0] << setw(9) << CapIDMean[1] << setw(9) << CapIDMean[2] << setw(9) << CapIDMean[3];
+          DPGfile << setw(9) << CapIDStd[0] << setw(9) << CapIDStd[1] << setw(9) << CapIDStd[2] << setw(9) << CapIDStd[3];
+          DPGfileWidth << setw(9) << CapIDStd[0]*CapIDStd[0] << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << 0.0;
+          DPGfileWidth << setw(9) << 0.0 << setw(9) << CapIDStd[1]*CapIDStd[1] << setw(9) << 0.0 << setw(9) << 0.0;
+          DPGfileWidth << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << CapIDStd[2]*CapIDStd[2] << setw(9) << 0.0;
+          DPGfileWidth << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << CapIDStd[3]*CapIDStd[3];
+          DPGfile << setw(11) << hex << rawIDarray[subdet][eta.first][phi.first][dep.first];
+          DPGfile << "\n";
+          DPGfileWidth << setw(11) << hex << rawIDarray[subdet][eta.first][phi.first][dep.first];
+          DPGfileWidth << "\n";
+          CheckMissing[subdet][eta.first][phi.first][dep.first] = 0;
+        }
+      }
+    }
+  }
+
+  // Now get values for missing channels: Average over all (available) adjacent eta and phi +/- 1
+  int myeta, myphi;
+  for (auto const& subdet : subdets){
+    for (auto const& eta : CheckMissing[subdet]){
+      for (auto const& phi : CheckMissing[subdet][eta.first]){
+        for (auto const& dep : CheckMissing[subdet][eta.first][phi.first]){
+          if(CheckMissing[subdet][eta.first][phi.first][dep.first]!=0){
+            DPGfile << setw(17) << dec << eta.first << setw(16) << phi.first << setw(16) << dep.first << setw(16) << subdet;
+            DPGfileWidth << setw(17) << dec << eta.first << setw(16) << phi.first << setw(16) << dep.first << setw(16) << subdet;
+            for (int capid=0; capid<4; capid++) {
+              pedsum = 0.0;
+              pedsqsum = 0.0;
+              pedsize = 0;
+              CapIDMean[capid] = 0.0;
+              CapIDStd[capid] = 0.0;
+              for (int etavar=-1; etavar<2; etavar++) {
+                for (int phivar=-1; phivar<2; phivar++) {
+                  myeta = eta.first+etavar;
+                  myphi = phi.first+phivar;
+                  if (myeta==0) myeta=-eta.first; // either eta in "0,1,2"->"-1,1,2" or "-2,-1,0"->"-2,-1,1"
+                  if (myphi==0) myphi=72;
+                  if (myphi==73) myphi=1;
+                  if (!CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].empty()){
+                    pedsum = pedsum + std::accumulate(CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].begin(), CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].end(), 0.0);
+                    pedsqsum = pedsqsum + std::inner_product(CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].begin(), CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].end(), CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].begin(), 0.0);
+                    pedsize = pedsize + CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].size();
+                  }
+                }
+              }
+              pedmean = pedsum / pedsize;
+              pedstd = sqrt(pedsqsum / pedsize - pedmean * pedmean);
+              CapIDMean[capid] = pedmean;
+              CapIDStd[capid] = pedstd;
+            }
+            DPGfile << setw(9) << CapIDMean[0] << setw(9) << CapIDMean[1] << setw(9) << CapIDMean[2] << setw(9) << CapIDMean[3];
+            DPGfile << setw(9) << CapIDStd[0] << setw(9) << CapIDStd[1] << setw(9) << CapIDStd[2] << setw(9) << CapIDStd[3];
+            DPGfileWidth << setw(9) << CapIDStd[0]*CapIDStd[0] << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << 0.0;
+            DPGfileWidth << setw(9) << 0.0 << setw(9) << CapIDStd[1]*CapIDStd[1] << setw(9) << 0.0 << setw(9) << 0.0;
+            DPGfileWidth << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << CapIDStd[2]*CapIDStd[2] << setw(9) << 0.0;
+            DPGfileWidth << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << CapIDStd[3]*CapIDStd[3];
+            DPGfile << setw(11) << hex << CheckMissing[subdet][eta.first][phi.first][dep.first];
+            DPGfile << "\n";
+            DPGfileWidth << setw(11) << hex << rawIDarray[subdet][eta.first][phi.first][dep.first];
+            DPGfileWidth << "\n";
           }
         }
       }
     }
   }
-  tablefile.close();*/
-
+  DPGfile.close();
+  DPGfileWidth.close();
 
 
   ////
-  std::cout << "Preparing matching map..." << std::endl; // Find eta/phi/depth matching to crate/slot/fiber/channel, for HBHE only (Reminder that some eta/phi/depth overlap between HBHE and HFHO)
+  cout << "Preparing matching map..." << endl; // Find eta/phi/depth matching to crate/slot/fiber/channel, for HBHE only (Reminder that some eta/phi/depth overlap between HBHE and HFHO)
   map<string, string> matching;
   ifstream infile("lmap_complete.txt"); 
   string line, sumone, sumtwo, strgarbage;
@@ -541,7 +618,7 @@ int main(int argc, char *argv[])
     matching[sumone] = sumtwo;
   }
 
-  std::cout << "Writing xml..." << std::endl;
+  cout << "Writing xml..." << endl;
 
   ofstream xmlfile;
   xmlfile.open(floatday+".2023.xml");
@@ -573,7 +650,8 @@ int main(int argc, char *argv[])
   for(int crate: HBHEcrateVec){
     for(int slot=1; slot<13; slot++){
       int modulo = slot%3; // mod 1 (1,4,7...) = HB only,    mod 2 (2,5,8...) = HBHE mix,    mod 0 (3,6,9...) = HE only
-      int elements, maxchannel, ZS, smallEntries, largeEntries;
+      int elements, maxchannel, ZS, smallEntries, largeEntries, ietaidx, depthidx; // , iphiidx
+      float offset;
       string mystring;
       int filled = 0;
       if(modulo==0){
@@ -587,29 +665,45 @@ int main(int argc, char *argv[])
         bool FiberNotInUHTR = (modulo==2 and find(FibNotInMod2.begin(), FibNotInMod2.end(), fiber) != FibNotInMod2.end()) or (modulo==0 and find(FibNotInMod0.begin(), FibNotInMod0.end(), fiber) != FibNotInMod0.end());
         for(int channel=0; channel<maxchannel; channel++){
           // (Note on ranges: RM 1-4, RMFI 1-8, CH 0-5 HE, CH 0-7 HB)
-          if((modulo==2 and fiber==10 and (channel==4 || channel==5)) || (modulo==0 and fiber==11 and (channel==0 || channel==1))){ // Nonexistent HB channels (for some reason have ZS 0 instead of 255)
+          if((modulo==2 and fiber==10 and (channel==4 || channel==5)) || (modulo==0 and fiber==11 and (channel==0 || channel==1))){ // Calibration unit fibers/channels (pin diodes). We don't use all of them but only a couple of channels, so they have ZS 0 instead of 255
             ZS = 0;
-          }else if(modulo==2 and ((fiber==14 and channel==4) || (fiber==15 and channel==0) || (fiber==20 and channel==4) || (fiber==21 and channel==0))){ // Masked HE channels, RM1 RMFI6 CH4, RM2 RMFI4 CH0, RM3 RMFI6 CH4, RM4 RMFI4 CH0
+          }else if(modulo==2 and ((fiber==14 and channel==4) || (fiber==15 and channel==0) || (fiber==20 and channel==4) || (fiber==21 and channel==0))){ // Masked HE channels:
+            // RM 1, RMFI 6, CH 4 -> slot 2, FI 14, CH 4   (eta 18, depth 1)
+            // RM 2, RMFI 4, CH 0 -> slot 2, FI 15, CH 0   (eta 18, depth 1)
+            // RM 3, RMFI 6, CH 4 -> slot 2, FI 20, CH 4   (eta 18, depth 1)
+            // RM 4, RMFI 4, CH 0 -> slot 2, FI 21, CH 0   (eta 18, depth 1)
             ZS = 255;
-          //}else if((modulo==2 and (fiber==2 || fiber==6) and channel==2) || (modulo==1 and (fiber==21 || fiber==23) and channel==0)){ // Masked HB channels, uHTR2 RM1 RMFI2 CH2, uHTR1 RM2 RMFI8 CH0, uHTR2 RM3 RMFI2 CH2, uHTR1 RM4 RMFI8 CH0
-          //  ZS = 255;
-          //}else if((modulo==2 and (fiber==2 || fiber==6) and channel==2) || (modulo==1 and (fiber==21 || fiber==23) and channel==0)){ // Masked HB channels, HBM04RM3: uHTR2 RM3 RMFI6 CH0-7 ###########TODO
-          //  ZS = 255;
+          /*}else if((modulo==2 and (fiber==2 || fiber==6) and channel==2) || (modulo==1 and (fiber==21 || fiber==23) and channel==0)){ // Masked HB channels in local DQM, but not actually masked in runs
+            // RM 1, RMFI 2, CH 2 -> slot 2, FI 2,  CH 2   (eta 14, depth 1)
+            // RM 2, RMFI 8, CH 0 -> slot 1, FI 21, CH 0   (eta 12, depth 4)
+            // RM 3, RMFI 2, CH 2 -> slot 2, FI 6,  CH 2   (eta 14, depth 1)
+            // RM 4, RMFI 8, CH 0 -> slot 1, FI 23, CH 0   (eta 12, depth 4)
+            ZS = 255;*/
           }else if(FiberNotInUHTR){ // Nonexistent channels
             ZS = 255;
-          }else if(modulo==2 and (fiber==12 || fiber==13 || fiber==22 || fiber==23) and (channel==6 || channel==7)){ // Placeholders for HE fibers, should be 255, but were regular HE ZS 8 for some reason (keep like this for now, to test consistency)
-            ZS = 8;
+          /*}else if(modulo==2 and (fiber==12 || fiber==13 || fiber==22 || fiber==23) and (channel==6 || channel==7)){ // Some of these are CU fibers, there are normal (?). During first tests, I determined that these were placeholders for HE fibers, all have depth "-999" and would get 255 at a leter check, but were regular HE ZS 8 for some reason.
+            ZS = 8;*/
+          }else if(crate==20 and slot==2 and fiber==6){ // Masked HBM04 RM3 fiber
+            ZS = 255;
           }else{
             mystring = matching[to_string(crate)+"_"+to_string(slot)+"_"+to_string(fiber)+"_"+to_string(channel)];
             //if(crate==20 && slot==2) cout << to_string(crate)+"_"+to_string(slot)+"_"+to_string(fiber)+"_"+to_string(channel) << " -> " << mystring << endl;
             istringstream iss(mystring);
-            int ietaidx, depthidx=-1000; //iphiidx, 
+            eta = 0;
+            phi = 0;
+            dep = 0;
+            depthidx=-1000;
             while( iss >> eta >> phi >> dep ){
               ietaidx = eta<0?eta+41:eta+40;
               //iphiidx = phi-1;
               depthidx = dep-1;
             }
-            if(depthidx==-1000){ // No valid depth: Also Masked? HE: RM2 RMFI5 CH5, RM2 RMFI7 CH1, RM3 RMFI2 CH1, RM3 RMFI4 CH0
+            if(depthidx==-1000){ // No valid depth: Not connected to any Megatiles for CU. Some in particular, appear like masked in local DQM for HE:
+              // RM 2, RMFI 5, CH 5 -> slot 2, FI 16, CH 5   (depth -999)
+              // RM 2, RMFI 7, CH 1 -> slot 2, FI 17, CH 1   (depth -999)
+              // RM 3, RMFI 2, CH 1 -> slot 2, FI 18, CH 1   (depth -999)
+              // RM 3, RMFI 4, CH 0 -> slot 2, FI 19, CH 0   (depth -999)
+              // Alternatively, channels there no eta/phi/depth match was found for given crate/slot/fiber/channel also pass through here
               ZS = 255;
             }else{
               isHE = (((ietaidx>=12 && ietaidx<=24) || (ietaidx>=57 && ietaidx<=69) || (ietaidx==25 && depthidx>=3) || (ietaidx==56 && depthidx>=3)));
@@ -623,10 +717,9 @@ int main(int argc, char *argv[])
                 else if (isHE) ZS = 8;
                 // Horizontal HB:
                 if ((((crate==30) and (slot==4 || slot==5 || slot==10 || slot==11)) || ((crate==31) and (slot==1 || slot==2 || slot==7 || slot==8))) and ZS>8) ZS++;
-              }else if(true){
+              }else if(false){
                 // ZS is Mean+RMS of each channel, rounded up
                 // SiPM: Large or Small? Check both
-                //histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first]
                 if(histarrayADC[subdet]["_sipmLarge"][eta][phi].find(dep) != histarrayADC[subdet]["_sipmLarge"][eta][phi].end()){
                   largeEntries = histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetEntries();
                 }
@@ -634,71 +727,62 @@ int main(int argc, char *argv[])
                   smallEntries = histarrayADC[subdet]["_sipmSmall"][eta][phi][dep]->GetEntries();
                 }
                 if ((smallEntries > 0) and (largeEntries == 0)){
-                  ZS = ceil(histarrayADC[subdet]["_sipmSmall"][eta][phi][dep]->GetMean() + 5*histarrayADC[subdet]["_sipmSmall"][eta][phi][dep]->GetRMS());
+                  ZS = ceil(histarrayADC[subdet]["_sipmSmall"][eta][phi][dep]->GetMean() + XtimesRMS*histarrayADC[subdet]["_sipmSmall"][eta][phi][dep]->GetRMS() + RMSplusY);
                 }else if ((smallEntries == 0) and (largeEntries > 0)){
-                  ZS = ceil(histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + 5*histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS());
+                  ZS = ceil(histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + XtimesRMS*histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS() + RMSplusY);
                 }else if ((smallEntries == 0) and (largeEntries == 0)){
                   cout << "WARNING! NONE! " << smallEntries << "/" << largeEntries << ": " << eta << " " << phi << " " << dep << endl;
-                  ZS = 255;
+                  ZS = 255; // Shouldn't happen. Set safety value anyway
                 }else if ((smallEntries > 0) and (largeEntries > 0)){
                   cout << "WARNING! BOTH! " << smallEntries << "/" << largeEntries << ": " << eta << " " << phi << " " << dep << endl;
+                  ZS = ceil(histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + XtimesRMS*histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS() + RMSplusY); // Shouldn't happen. Use large value just in case
                 }
               }else{
+                offset = RMSplusY;
+                if(crate==25 and ((slot==4 and (fiber==2 || fiber==6 || fiber==10 || fiber==14 || fiber==18 || fiber==22)) || (slot==5 and (fiber==6 || fiber==7)))) offset = offset - LessForHBM09RM3; // Lower threshold for HBM09 RM3
                 // ZS as above, but derived by FC, and then translated into ADC
-                //cout << ">>> " << subdet << " , " << eta << " , " << phi << " , " << dep << endl;
                 if(histarrayFC[subdet]["_sipmLarge"][eta][phi].find(dep) != histarrayFC[subdet]["_sipmLarge"][eta][phi].end()){
-                  //cout << "Getting large" << endl;
                   largeEntries = histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetEntries();
-                  //cout << "large: " << largeEntries << endl;
                 }
                 if(histarrayFC[subdet]["_sipmSmall"][eta][phi].find(dep) != histarrayFC[subdet]["_sipmSmall"][eta][phi].end()){
-                  //cout << "Getting small" << endl;
                   smallEntries = histarrayFC[subdet]["_sipmSmall"][eta][phi][dep]->GetEntries();
-                  //cout << "small: " << smallEntries << endl;
                 }
                 if ((smallEntries > 0) and (largeEntries == 0)){
-                  //cout << "Getting small" << endl;
-                  float fc = histarrayFC[subdet]["_sipmSmall"][eta][phi][dep]->GetMean() + histarrayFC[subdet]["_sipmSmall"][eta][phi][dep]->GetRMS();
-                  ZS = ceil(fc2adc->Eval(fc));
+                  float fc = histarrayFC[subdet]["_sipmSmall"][eta][phi][dep]->GetMean() + XtimesRMS*histarrayFC[subdet]["_sipmSmall"][eta][phi][dep]->GetRMS();
+                  ZS = ceil(fc2adc->Eval(fc) + offset);
                 }else if ((smallEntries == 0) and (largeEntries > 0)){
-                  //cout << "Getting large" << endl;
-                  float fc = histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS();
-                  ZS = ceil(fc2adc->Eval(fc));
+                  float fc = histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + XtimesRMS*histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS();
+                  ZS = ceil(fc2adc->Eval(fc) + offset);
+                  if(eta==-9 and phi==32 and dep==4){
+                    cout << "FC Mean: " << histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() << endl;
+                    cout << "FC RMS: " << histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS() << endl;
+                    cout << "ADC Mean: " << histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() << endl;
+                    cout << "ADC RMS: " << histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS() << endl;
+                    cout << "ADC val of FC = " << fc << " is " << fc2adc->Eval(fc) << endl;
+                    cout << "ADC val of FC = " << histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + (XtimesRMS-1.0)*histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS() << " is " << fc2adc->Eval(histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + (XtimesRMS-1.0)*histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS()) << endl;
+                  }
                 }else if ((smallEntries == 0) and (largeEntries == 0)){
-                  cout << "WARNING! NONE! " << smallEntries << "/" << largeEntries << ": " << eta << " " << phi << " " << dep << endl;
-                  ZS = 255;
+                  cout << "WARNING! NONE! " << smallEntries << "/" << largeEntries << ": " << eta << " " << phi << " " << dep << " " << crate << " " << slot << " " << fiber << " " << channel << endl;
+                  ZS = 255; // Shouldn't happen. Set safety value anyway
                 }else if ((smallEntries > 0) and (largeEntries > 0)){
                   cout << "WARNING! BOTH! " << smallEntries << "/" << largeEntries << ": " << eta << " " << phi << " " << dep << endl;
+                  float fc = histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + XtimesRMS*histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS();
+                  ZS = ceil(fc2adc->Eval(fc) + offset); // Shouldn't happen. Use large value just in case
                 }
               }
             }
           }
           // Double check ZS of masked channels:
-          // HB: Masked in DQM: 
-          // RM 1, RMFI 2, CH 2 -> slot 2, FI 2,  CH 2   (eta 14, depth 1)
-          // RM 2, RMFI 8, CH 0 -> slot 1, FI 21, CH 0   (eta 12, depth 4)
-          // RM 3, RMFI 2, CH 2 -> slot 2, FI 6,  CH 2   (eta 14, depth 1)
-          // RM 4, RMFI 8, CH 0 -> slot 1, FI 23, CH 0   (eta 12, depth 4)
-          // HE: Masked in DQM:
-          // RM 1, RMFI 6, CH 4 -> slot 2, FI 14, CH 4   (eta 18, depth 1)
-          // RM 2, RMFI 4, CH 0 -> slot 2, FI 15, CH 0   (eta 18, depth 1)
-          // RM 3, RMFI 6, CH 4 -> slot 2, FI 20, CH 4   (eta 18, depth 1)
-          // RM 4, RMFI 4, CH 0 -> slot 2, FI 21, CH 0   (eta 18, depth 1)
-          // RM 2, RMFI 5, CH 5 -> slot 2, FI 16, CH 5   (depth -999)
-          // RM 2, RMFI 7, CH 1 -> slot 2, FI 17, CH 1   (depth -999)
-          // RM 3, RMFI 2, CH 1 -> slot 2, FI 18, CH 1   (depth -999)
-          // RM 3, RMFI 4, CH 0 -> slot 2, FI 19, CH 0   (depth -999)
-          // Masked: HBM04 RM3 RMFI 1
-          // -> CR 20, slot 1 (only 1, not mod 3), FI 2, CH 0-7
-          // ( or is it CR 20, slot 2, FI 6 ???, corresponds to HBM04 RM3 RMFI 2
-          if( ((modulo==2 and (fiber==2 || fiber==6) and channel==2) || (modulo==1 and (fiber==21 || fiber==23) and channel==0))  ||  (modulo==2 and ((fiber==14 and channel==4) || (fiber==15 and channel==0) || (fiber==20 and channel==4) || (fiber==21 and channel==0) || (fiber==16 and channel==5) || (fiber==17 and channel==1) || (fiber==18 and channel==1) || (fiber==19 and channel==0)))  ||  (crate==20 and slot==1 and fiber==2) ){
+          /*if( ((modulo==2 and (fiber==2 || fiber==6) and channel==2) || (modulo==1 and (fiber==21 || fiber==23) and channel==0))  ||  (modulo==2 and ((fiber==14 and channel==4) || (fiber==15 and channel==0) || (fiber==20 and channel==4) || (fiber==21 and channel==0) || (fiber==16 and channel==5) || (fiber==17 and channel==1) || (fiber==18 and channel==1) || (fiber==19 and channel==0)))  ||  (crate==20 and slot==1 and fiber==2) ){
             cout << "Doublecheck mask: " << ZS;
             if(ZS!=0 and ZS!=255){
               cout << " -> CR " << crate << ", slot " << slot << ", FI " << fiber << ", CH " << channel << "; changed to 255";
               ZS = 255;
             }
             cout << endl;
-          }
+          }*/
+          if(ZS>0 and ZS<6) ZS = 6; // Define minimum ZS, specifically for HBP14 RM1
+
           xmlfile << hex << ZS;
           filled++;
           if(elements != filled) xmlfile << " ";
@@ -738,7 +822,7 @@ int main(int argc, char *argv[])
 
 
 
-  std::cout << "Saving results..." << std::endl;
+  cout << "Saving results..." << endl;
 
   ofile->cd();
 
@@ -757,22 +841,11 @@ int main(int argc, char *argv[])
   ADCvsFC->Write();
   adc2fc->Write();
   fc2adc->Write();
-  /*for(int t=0; t<3; t++){ // 0=Small SiPM, 1=Large SiPM, 2=HF&HO
-    for(int i=0; i<82; i++){ // Number of ieta bins -41..41, excluding 0
-      for(int j=0; j<72; j++){ // Number of iphi bins 1..72
-        for(int k=0; k<7; k++){ // Number of depths 1..7
-          if (histarray[t][i][j][k]->GetEntries() > 0){
-            histarray[t][i][j][k]->Write();
-          }
-        }
-      }
-    }
-  }*/
 
-  std::cout << "Finished writing." << std::endl;
+  cout << "Finished writing." << endl;
   ofile->Close();
 
-  std::cout << "End Job." << std::endl;
+  cout << "End Job." << endl;
   return 0;
 
 }
