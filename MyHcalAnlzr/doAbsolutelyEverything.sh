@@ -1,5 +1,6 @@
 # Daysince, Lumi, Floatday
 
+# --- Start Run2023A (First beams)
 #source doEverything.sh 0 0.0 06.04
 #source doEverything.sh 1 0.0 07.04
 #source doEverything.sh 2 0.0 08.04
@@ -12,5 +13,11 @@
 #source doEverything.sh 9 0.0 15.04
 #source doEverything.sh 10 0.0 16.04
 #source doEverything.sh 11 0.0 17.04
-source doEverything.sh 12 0.0 17.04
-source doEverything.sh 13 0.0 18.04
+#source doEverything.sh 12 0.0 18.04
+#source doEverything.sh 13 0.0 19.04
+#source doEverything.sh 14 0.0 20.04
+# --- End Run2023A , Start Run2023B (First 13.6 TeV collosions)
+# Luminosities taken from ~12:00 of each day
+#source doEverything.sh 15 0.0 21.04
+#source doEverything.sh 16 0.002 22.04
+source doEverything.sh 17 0.013 23.04

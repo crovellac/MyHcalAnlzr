@@ -13,6 +13,7 @@ mv ${dir}/byLumi/Ped* ${dir}/histograms
 #mv ${dir}/byLumi/Ex* ${dir}/extrapolations
 
 mv Table*txt /afs/cern.ch/user/d/dmroy/public/PED_tables_2023/
+mv PedestalTable*txt /afs/cern.ch/user/d/dmroy/public/PED_DPGcalibration/
 mv ${dir}/byDay/* /eos/user/d/dmroy/www/plots_archive/PED_plots_2023/byDay/
 mv ${dir}/byLumi/* /eos/user/d/dmroy/www/plots_archive/PED_plots_2023/byLumi/
 mv ${dir}/histograms/* /eos/user/d/dmroy/www/plots_archive/PED_plots_2023/histograms/

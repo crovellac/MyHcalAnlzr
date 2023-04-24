@@ -8,7 +8,8 @@ day = str(int(date.split(".")[0]))
 month = str(int(date.split(".")[1]))
 
 #path = "/eos/cms/tier0/store/data/Commissioning2023/TestEnablesEcalHcal/*/*/*"
-path = "/eos/cms/tier0/store/data/Run2023A/TestEnablesEcalHcal/*/*/*"
+#path = "/eos/cms/tier0/store/data/Run2023A/TestEnablesEcalHcal/*/*/*"  # 06.04.-20.04.
+path = "/eos/cms/tier0/store/data/Run2023B/TestEnablesEcalHcal/*/*/*"
 
 blacklist = ["244aa98d-1bc6-4c3f-bf02-36032473b104.root"]
 
