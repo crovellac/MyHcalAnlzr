@@ -6,14 +6,15 @@ import json
 date = sys.argv[1]
 day = str(int(date.split(".")[0]))
 month = str(int(date.split(".")[1]))
+whitelistrun = sys.argv[2] if len(sys.argv)>2 else ""
 
 #path = "/eos/cms/tier0/store/data/Commissioning2023/TestEnablesEcalHcal/*/*/*"
 #path = "/eos/cms/tier0/store/data/Run2023A/TestEnablesEcalHcal/*/*/*"  # 06.04.-20.04.
 path = "/eos/cms/tier0/store/data/Run2023B/TestEnablesEcalHcal/*/*/*"
 
-blacklist = ["244aa98d-1bc6-4c3f-bf02-36032473b104.root"]
+blacklist_file = ["244aa98d-1bc6-4c3f-bf02-36032473b104.root"]
 
-allfiles_list = [f for f in glob.glob(path+"/*/*/*/*") if f.endswith(".root") and f.split("/")[-1] not in blacklist]
+allfiles_list = [f for f in glob.glob(path+"/*/*/*/*") if f.endswith(".root") and f.split("/")[-1] not in blacklist_file]
 print("There are",len(allfiles_list),"files total")
 allfiles_done = []
 if os.path.isfile('allFilesByDate.json.json'):
@@ -60,7 +61,9 @@ for run in allruns_date[day+"."+month]:
     pureRuns.append(run)
 
 #Consider using mixed runs only when there are no pure runs
-if pureRuns!=[]:
+if whitelistrun in pureRuns:
+  runs = [whitelistrun]
+elif pureRuns!=[]:
   runs = pureRuns
 elif mixedRuns!=[]:
   runs = mixedRuns

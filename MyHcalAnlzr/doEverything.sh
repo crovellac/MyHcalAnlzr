@@ -1,6 +1,7 @@
 days=$1
 lumi=$2
 floatday=$3
+run=$4
 
 #run="363427"
 #days="39"
@@ -19,7 +20,7 @@ floatday=$3
 #  sed -i "s/${pedrun}/XXXXXX/g" localrun_singlePed.py
 #fi
 #cd ..
-python3 FindDatasetToRun.py ${floatday}
+python3 FindDatasetToRun.py ${floatday} ${run}
 
 
 # Digi step: From nano tuple, make one histogram per channel

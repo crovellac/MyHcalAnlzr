@@ -31,9 +31,10 @@ int main(int argc, char *argv[])
 
   //string runid = argv[1]; // Integer
   string floatday = argv[1]; // String, e.g. "22.02"
-  float XtimesRMS = 5.0; // Set new ZS thresholds to "Mean + X * RMS + Y"
+  float XtimesRMS = 3.5; // Set new ZS thresholds to "Mean + X * RMS + Y"
   float RMSplusY = 0.0; // Set new ZS thresholds to "Mean + X * RMS + Y"
   float LessForHBM09RM3 = 0.0;
+  int ZSminimum = 6; // Define minimum ZS, specifically for HBP14 RM1
   int maxevents = -1; // -1 for all
   
 
@@ -781,7 +782,7 @@ int main(int argc, char *argv[])
             }
             cout << endl;
           }*/
-          if(ZS>0 and ZS<6) ZS = 6; // Define minimum ZS, specifically for HBP14 RM1
+          if(ZS>0 and ZS<ZSminimum) ZS = ZSminimum; // Define minimum ZS, specifically for HBP14 RM1
 
           xmlfile << hex << ZS;
           filled++;
