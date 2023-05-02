@@ -234,6 +234,12 @@ for title in grdict:
   meanrms = grdict[title][0]
   subdet = grdict[title][1]
   parts = [trend for trend in trends if trend.startswith(subdet) and "depth" not in trend]
+  print(parts)
+  # Manually sort:
+  if parts == ['HB_sipmLarge', 'HB_sipmLarge_HBM09RM3', 'HB_sipmLarge_HBP14RM1', 'HB_sipmLarge_phi,1,72', 'HB_sipmLarge_phi,12,13', 'HB_sipmLarge_phi,36,37', 'HB_sipmSmall', 'HB_sipmSmall_HBM09RM3', 'HB_sipmSmall_HBP14RM1', 'HB_sipmSmall_phi,1,72', 'HB_sipmSmall_phi,12,13', 'HB_sipmSmall_phi,36,37']:
+    parts = ['HB_sipmLarge', 'HB_sipmSmall', 'HB_sipmLarge_phi,1,72', 'HB_sipmSmall_phi,1,72', 'HB_sipmLarge_phi,36,37', 'HB_sipmSmall_phi,36,37', 'HB_sipmLarge_phi,12,13', 'HB_sipmSmall_phi,12,13', 'HB_sipmLarge_HBP14RM1', 'HB_sipmSmall_HBP14RM1', 'HB_sipmLarge_HBM09RM3', 'HB_sipmSmall_HBM09RM3']
+  if parts == ['HE_sipmLarge', 'HE_sipmLarge_phi,1,72', 'HE_sipmLarge_phi,12,13', 'HE_sipmLarge_phi,36,37', 'HE_sipmSmall', 'HE_sipmSmall_phi,1,72', 'HE_sipmSmall_phi,12,13', 'HE_sipmSmall_phi,36,37']:
+    parts = ['HE_sipmLarge', 'HE_sipmSmall', 'HE_sipmLarge_phi,1,72', 'HE_sipmSmall_phi,1,72', 'HE_sipmLarge_phi,36,37', 'HE_sipmSmall_phi,36,37', 'HE_sipmLarge_phi,12,13', 'HE_sipmSmall_phi,12,13']
   #thismin = min(limits[subd+alpha+beta][0] for subd in subdets)
   #thismax = max(limits[subd+alpha+beta][1] for subd in subdets)
   thismin, thismax = MinMaxAxis((limits[trend+meanrms][0] for trend in parts), (limits[trend+meanrms][1] for trend in parts), 0.5)
@@ -246,22 +252,30 @@ for title in grdict:
     if "HB" in part or "HE" in part:
       if "Large" in part: color = ROOT.kBlue
       if "Small" in part: color = ROOT.kGreen
-    if j%4==0:
-      tcolor = color
-      marker = 21
-      line = 1
-    elif j%4==1:
+    if "phi,1," in part:
       tcolor = color+3
-      marker = 20
-      line = 4
-    elif j%4==2:
-      tcolor = color-7
       marker = 22
-      line = 9
-    elif j%4==3:
+      line = 4
+    elif "phi,36," in part:
       tcolor = color-5
       marker = 23
       line = 10
+    elif "phi,12," in part:
+      tcolor = color-7
+      marker = 20
+      line = 9
+    elif "HBP14RM1" in part:
+      tcolor = color+4
+      marker = 33
+      line = 2
+    elif "HBM09RM3" in part:
+      tcolor = color+4
+      marker = 33
+      line = 2
+    else:
+      tcolor = color
+      marker = 21
+      line = 1
     gr[part][meanrms].SetLineColor(tcolor)
     gr[part][meanrms].SetLineStyle(line)
     gr[part][meanrms].SetMarkerStyle(marker)
@@ -287,6 +301,8 @@ for title in grdict:
       if "phi,36," in part: sizename += ", iphi in [36,37]" 
       elif "phi,12," in part: sizename += ", iphi in [12,13]" 
       elif "phi,1," in part: sizename += ", iphi in [72,1]" 
+      elif "HBP14RM1" in part: sizename += ", HBP14 RM1" 
+      elif "HBM09RM3" in part: sizename += ", HBM09 RM3" 
     label = subdet + " " + sizename + ""
     legend[-1].AddEntry(gr[part][meanrms], label, "pl")
   legend[-1].Draw()

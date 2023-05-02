@@ -23,7 +23,7 @@ floatday=$5
 #floatday="26.09"
 
 
-# cmsRun step
+# cmsRun step -> Make ntuples
 cd python
 sed -i "s/XXXXXX/${run}/g" localrun_singleFull.py
 cmsRun localrun_singleFull.py
@@ -36,7 +36,7 @@ fi
 cd ..
 
 
-# Digi step
+# Digi step -> Make per-channel plots, table, xml
 source rundigi_single.sh Full ${days} ${lumi} ${floatday} ${run}
 if [[ "$pedrun" != "XXX" ]]; then
   source rundigi_single.sh Ped ${days} ${lumi} ${floatday} ${pedrun}
@@ -55,4 +55,5 @@ hadd hist_LocalOutput_hadd.root hist_LocalOutputSummary_run*.root
 # Make plots
 #python3 Plotting.py hist_LocalOutput_hadd.root daysince
 source makePlots.sh PED_plots
-mv /eos/user/d/dmroy/www/plots_archive/PED_plots/extrapolations/ExtrapolationFC_H* /eos/user/d/dmroy/www/plots_archive/PED_plots/extrapolations_FC/
+# 2023: Removed for beginning
+#mv /eos/user/d/dmroy/www/plots_archive/PED_plots/extrapolations/ExtrapolationFC_H* /eos/user/d/dmroy/www/plots_archive/PED_plots/extrapolations_FC/

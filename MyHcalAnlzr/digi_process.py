@@ -40,6 +40,14 @@ for depth in range(7):
 pedtrend += ["HB_sipmSmall_phi,1,72", "HB_sipmLarge_phi,1,72", "HE_sipmSmall_phi,1,72", "HE_sipmLarge_phi,1,72"]
 pedtrend += ["HB_sipmSmall_phi,12,13", "HB_sipmLarge_phi,12,13", "HE_sipmSmall_phi,12,13", "HE_sipmLarge_phi,12,13"]
 pedtrend += ["HB_sipmSmall_phi,36,37", "HB_sipmLarge_phi,36,37", "HE_sipmSmall_phi,36,37", "HE_sipmLarge_phi,36,37"]
+pedtrend += ["HB_sipmSmall_HBP14RM1", "HB_sipmLarge_HBP14RM1", "HB_sipmSmall_HBM09RM3", "HB_sipmLarge_HBM09RM3"]
+
+def IsHBP14RM1(hname):
+  if "iphi51" in hname and "ieta-" not in hname: return True
+  return False
+def IsHBM09RM3(hname):
+  if "iphi32" in hname and "ieta-" in hname: return True
+  return False
 
 # Process
 for p in pedtrend:
@@ -51,10 +59,21 @@ for p in pedtrend:
     for cut in p.split("_")[1:]:
       if "phi" in cut: # Special phi cuts
         if all("phi"+phicut+"_" not in hname for phicut in cut.split(",")[1:]): skip = True
+      elif "HBP14RM1" in cut:
+        if not IsHBP14RM1(hname): skip = True
+      elif "HBM09RM3" in cut:
+        if not IsHBM09RM3(hname): skip = True
       elif cut not in hname: skip = True
+    if ("HB" in p) and ("HBP14RM1" not in p) and (IsHBP14RM1(hname)): skip = True
+    if ("HB" in p) and ("HBM09RM3" not in p) and (IsHBM09RM3(hname)): skip = True
     if not skip:
-      finalhistos[p+"Mean"].Fill(histos[subdet][hname].GetMean())
-      finalhistos[p+"RMS"].Fill(histos[subdet][hname].GetRMS())
+      mean = histos[subdet][hname].GetMean()
+      rms = histos[subdet][hname].GetRMS()
+      if mean!=0.0 and rms!=0.0:
+        finalhistos[p+"Mean"].Fill(mean)
+        finalhistos[p+"RMS"].Fill(rms)
+      #if mean<1 or rms<0.2: print("Low values for",subdet,hname,": Mean =",mean,", RMS =",rms)
+      #if mean>7 and "HE" in p: print("High values for",subdet,hname,": Mean =",mean,", RMS =",rms)
 
 # Write in text file
 with open("SaveFile.txt", "a") as file:
