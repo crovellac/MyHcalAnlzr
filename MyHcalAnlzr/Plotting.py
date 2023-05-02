@@ -181,7 +181,7 @@ if not os.path.isdir(output): os.mkdir(output)
 fin=ROOT.TFile.Open(inputfile, "READ")
 
 if dowhat == "daysince":
-  xtitle = "Days since 5th July"
+  xtitle = "Days since 6th April"
 elif dowhat == "lumi":
   xtitle = "Luminosity [fb^{-1}]"
 
