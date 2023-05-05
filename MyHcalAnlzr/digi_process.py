@@ -11,13 +11,15 @@ ROOT.gROOT.SetBatch(True)
 days = sys.argv[1]
 lumi = sys.argv[2]
 floatday = sys.argv[3] # e.g. "05.07"
-#runid = "363781"
-#days = 123
-#lumi = 12.3
-#floatday = "12.03"
+WholeRun = True if lumi=="WholeRun" else False
+# if WholeRun, then "days" is actually run number, and "floatday" is actually input filename
 
 fileName = [f for f in os.listdir(".") if f.endswith("_"+floatday+".root")][0]
-runid = fileName[20:26]
+if not WholeRun:
+  runid = fileName[20:26]
+else:
+  runid = days
+  lumi = fileName.split("LS")[1].split("_")[0]
 fin=ROOT.TFile.Open(fileName, "READ")
 histos = {}
 histos["FC"] = {}
@@ -83,20 +85,23 @@ for p in pedtrend:
           finalhistos[p+"_"+unit+"_RMS"].Fill(rms)
 
 # Write in text file
-with open("SaveFile.txt", "a") as file:
+savefilename = "SaveFile.txt" if not WholeRun else "SaveFile_"+runid+".txt"
+with open(savefilename, "a") as file:
   # To be written:
   # RUN LUMI DAYSINCE FLOATDAY TRENDNAME MeanMean/MeanRMS/RMSMean value
+  idname = runid+" "+lumi+" "+days+" "+floatday if not WholeRun else runid+" "+lumi+" X X"
   for trend in finalhistos:
     if trend.endswith("RMS"): continue
     if finalhistos[trend].GetMean()==0: continue # HO in Full runs is empty
     trend = trend[:-5]
-    file.write(runid+" "+lumi+" "+days+" "+floatday+" "+trend+" MeanMean "+str(finalhistos[trend+"_Mean"].GetMean()) + "\n")
-    file.write(runid+" "+lumi+" "+days+" "+floatday+" "+trend+" MeanRMS "+str(finalhistos[trend+"_RMS"].GetMean()) + "\n")
-    file.write(runid+" "+lumi+" "+days+" "+floatday+" "+trend+" RMSMean "+str(finalhistos[trend+"_Mean"].GetRMS()) + "\n")
-    file.write(runid+" "+lumi+" "+days+" "+floatday+" "+trend+" RMSRMS "+str(finalhistos[trend+"_RMS"].GetRMS()) + "\n")
+    file.write(idname+" "+trend+" MeanMean "+str(finalhistos[trend+"_Mean"].GetMean()) + "\n")
+    file.write(idname+" "+trend+" MeanRMS "+str(finalhistos[trend+"_RMS"].GetMean()) + "\n")
+    file.write(idname+" "+trend+" RMSMean "+str(finalhistos[trend+"_Mean"].GetRMS()) + "\n")
+    file.write(idname+" "+trend+" RMSRMS "+str(finalhistos[trend+"_RMS"].GetRMS()) + "\n")
 
 # Write histograms
-fout=ROOT.TFile.Open("hist_CalibOutputSummary_run"+runid+".root", "RECREATE")
+rootfilename = "hist_CalibOutputSummary_run"+runid+".root" if not WholeRun else "hist_CalibOutputSummary_run"+runid+"_"+floatday+".root"
+fout=ROOT.TFile.Open(rootfilename, "RECREATE")
 for fhist in finalhistos:
   finalhistos[fhist].Write()
 fout.Close()

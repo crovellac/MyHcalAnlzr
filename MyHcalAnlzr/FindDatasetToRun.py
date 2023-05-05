@@ -7,6 +7,7 @@ date = sys.argv[1]
 day = str(int(date.split(".")[0]))
 month = str(int(date.split(".")[1]))
 whitelistrun = sys.argv[2] if len(sys.argv)>2 else ""
+WholeRun = True if len(sys.argv)>3 and sys.argv[3]=="WholeRun" else False # Will only work for a given run!
 
 #path = "/eos/cms/tier0/store/data/Commissioning2023/TestEnablesEcalHcal/*/*/*"
 #path = "/eos/cms/tier0/store/data/Run2023A/TestEnablesEcalHcal/*/*/*"  # 06.04.-20.04.
@@ -61,11 +62,14 @@ for run in allruns_date[day+"."+month]:
     pureRuns.append(run)
 
 #Consider using mixed runs only when there are no pure runs
-if whitelistrun in pureRuns:
+if whitelistrun in pureRuns or whitelistrun in mixedRuns:
+  print("Using given run")
   runs = [whitelistrun]
 elif pureRuns!=[]:
+  print("Using run from given day")
   runs = pureRuns
 elif mixedRuns!=[]:
+  print("Using run from given day (overlapping with previous or next day)")
   runs = mixedRuns
 else:
   print("There are no available runs for this day!")
@@ -80,27 +84,56 @@ for run in runs:
   runstr = run[:3]+"/"+run[3:]
   files += [f for f in glob.glob(path+"/"+runstr+"/*/*") if f.endswith(".root")]
 
-# Process the largest file
-size = 0
 myfile = ""
+#newselectionmethod = True
+#if newselectionmethod:
+# Get all large files, sort by time, then process the median file
+largefiles = {}
 for f in files:
   fs = os.path.getsize(f)
-  if fs > size:
-    size = fs
-    myfile = f
+  if fs > 3758096384: # 3.5G
+    largefiles[os.path.getmtime(f)] = f
+if largefiles != {}:
+  myfile = largefiles[ sorted(list(largefiles.keys()))[int(len(largefiles)/2.0)] ]
+#else:
+#  # Process the largest file
+#  size = 0
+#  for f in files:
+#    fs = os.path.getsize(f)
+#    if fs > size:
+#      size = fs
+#      myfile = f
+
 if myfile == "":
   print("NO FILES FOUND!")
+  exit()
 else:
   print("Processing",myfile,"...")
 run = myfile.split("/")[11]+myfile.split("/")[12]
 
 # Run
-os.system("cp HcalNano_Template.sh HcalNano_"+run+".sh")
-filein = myfile.replace("/eos/cms/tier0", "").replace("/", "\/")
-os.system('sed -i "s/FILEIN/'+filein+'/g" HcalNano_'+run+'.sh')
-os.system('sed -i "s/XXXXXX/'+run+'/g" HcalNano_'+run+'.sh')
-os.system('sed -i "s/DAY/'+date+'/g" HcalNano_'+run+'.sh')
-os.system('. ./HcalNano_'+run+'.sh') # "source" somehow doesn't work here, but it works when you just replace it with "."
+if not WholeRun:
+  os.system("cp HcalNano_Template.sh HcalNano_"+run+".sh")
+  filein = myfile.replace("/eos/cms/tier0", "").replace("/", "\/")
+  os.system('sed -i "s/FILEIN/'+filein+'/g" HcalNano_'+run+'.sh')
+  os.system('sed -i "s/XXXXXX/'+run+'/g" HcalNano_'+run+'.sh')
+  os.system('sed -i "s/DAY/'+date+'/g" HcalNano_'+run+'.sh')
+  os.system('. ./HcalNano_'+run+'.sh') # "source" somehow doesn't work here, but it works when you just replace it with "."
+else:
+  files = [largefiles[f] for f in largefiles]
+  os.system("mkdir WholeRunOutput_"+run)
+  for myfile in files:
+    fname = myfile.split("/")[-1].split(".")[0]
+    os.system("cp HcalNano_Template.sh HcalNano_"+run+"_"+fname+".sh")
+    filein = myfile.replace("/eos/cms/tier0", "").replace("/", "\/")
+    os.system('sed -i "s/FILEIN/'+filein+'/g" HcalNano_'+run+'_'+fname+'.sh')
+    os.system('sed -i "s/XXXXXX/'+run+'_'+fname+'/g" HcalNano_'+run+'_'+fname+'.sh')
+    os.system('sed -i "s/_DAY//g" HcalNano_'+run+'_'+fname+'.sh')
+    os.system('sed -i "s/-n 5000/-n 300/g" HcalNano_'+run+"_"+fname+'.sh')
+    os.system('. ./HcalNano_'+run+'_'+fname+'.sh')
+    os.system('./macro_nano '+fname+' 1')
+    os.system('python3 digi_process.py '+run+' WholeRun '+fname)
+    os.system('mv *'+fname+'* WholeRunOutput_'+run)
 
 print("Done making NanoTuple!")
 exit()

@@ -31,7 +31,10 @@ int main(int argc, char *argv[])
 
   //string runid = argv[1]; // Integer
   string floatday = argv[1]; // String, e.g. "22.02"
+  bool WholeRun = false;
+  if(argc>1) WholeRun = argv[2]; // When doing a whole run, floatday will actually be the input filename. LS shall be added to output name
   float XtimesRMS = 3.5; // Set new ZS thresholds to "Mean + X * RMS + Y"
+  string StrXtimesRMS = "3.5"; // Same as above, as string (to_string doesn't work because there's trailing zeros)
   float RMSplusY = 0.0; // Set new ZS thresholds to "Mean + X * RMS + Y"
   float LessForHBM09RM3 = 0.0;
   int ZSminimum = 6; // Define minimum ZS, specifically for HBP14 RM1
@@ -230,6 +233,12 @@ int main(int argc, char *argv[])
   qiedigi->SetBranchAddress("DigiHB_sipmTypes", &DigiHB_sipmTypes);
   qiedigi->SetBranchAddress("DigiHE_sipmTypes", &DigiHE_sipmTypes);
 
+  uint LS;
+  qiedigi->SetBranchAddress("luminosityBlock", &LS);
+  if(WholeRun){
+    qiedigi->GetEntry(0);
+    floatday = "LS"+to_string(LS)+"_"+floatday;
+  }
 
   TFile *ofile = new TFile(("hist_CalibOutput_run"+runid+"_"+floatday+".root").c_str(), "recreate");
 
@@ -376,6 +385,22 @@ int main(int argc, char *argv[])
         }else if (subdet=="HE"){
           fcsum = (DigiHE_fc0[j]+DigiHE_fc1[j]+DigiHE_fc2[j]+DigiHE_fc3[j]+DigiHE_fc4[j]+DigiHE_fc5[j]+DigiHE_fc6[j]+DigiHE_fc7[j]) / 8.0;
           adcsum = (DigiHE_adc0[j]+DigiHE_adc1[j]+DigiHE_adc2[j]+DigiHE_adc3[j]+DigiHE_adc4[j]+DigiHE_adc5[j]+DigiHE_adc6[j]+DigiHE_adc7[j]) / 8.0;
+          if(ieta==-19 and iphi==16 and depth==5){ // There's a dead CapID (0) in this channel! Ignore it
+            if(DigiHE_capid0[j]==0){
+              fcsum = ((fcsum*8.0) - DigiHE_fc0[j] - DigiHE_fc4[j]) / 6.0;
+              adcsum = ((adcsum*8.0) - DigiHE_adc0[j] - DigiHE_adc4[j]) / 6.0;
+            }else if(DigiHE_capid1[j]==0){
+              fcsum = ((fcsum*8.0) - DigiHE_fc1[j] - DigiHE_fc5[j]) / 6.0;
+              adcsum = ((adcsum*8.0) - DigiHE_adc1[j] - DigiHE_adc5[j]) / 6.0;
+            }else if(DigiHE_capid2[j]==0){
+              fcsum = ((fcsum*8.0) - DigiHE_fc2[j] - DigiHE_fc6[j]) / 6.0;
+              adcsum = ((adcsum*8.0) - DigiHE_adc2[j] - DigiHE_adc6[j]) / 6.0;
+            }else if(DigiHE_capid3[j]==0){
+              fcsum = ((fcsum*8.0) - DigiHE_fc3[j] - DigiHE_fc7[j]) / 6.0;
+              adcsum = ((adcsum*8.0) - DigiHE_adc3[j] - DigiHE_adc7[j]) / 6.0;
+            }
+            //cout << DigiHE_fc0[j] << ", " << DigiHE_fc1[j] << ", " << DigiHE_fc2[j] << ", " << DigiHE_fc3[j] << ", " << DigiHE_fc4[j] << ", " << DigiHE_fc5[j] << ", " << DigiHE_fc6[j] << ", " << DigiHE_fc7[j] << "; AvgFC: " << fcsum << "; AvgADC: " << adcsum << endl;
+          }
           CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid0[j]].push_back(DigiHE_fc0[j]);
           CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid1[j]].push_back(DigiHE_fc1[j]);
           CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid2[j]].push_back(DigiHE_fc2[j]);
@@ -430,6 +455,7 @@ int main(int argc, char *argv[])
   }
   ADCvsFC->GetXaxis()->SetRange(0,0); // Reset*/
 
+  if(!WholeRun){
 
   cout << "Writing table..." << endl;
 
@@ -466,9 +492,9 @@ int main(int argc, char *argv[])
   DPGfile.open("PedestalTable_Run"+runid+"_"+floatday+".2023.txt");
   DPGfileWidth.open("PedestalTableWidth_Run"+runid+"_"+floatday+".2023.txt");
   DPGfile << "# Unit is fC" << "\n";
-  DPGfile << "#" << setw(16) << "ieta" << setw(16) << "iphi" << setw(16) << "depth" << setw(16) << "SubDet" << setw(9) << "CapId0" << setw(9) << "CapId1" << setw(9) << "CapId2" << setw(9) << "CapId3" << setw(9) << "WidthId0" << setw(9) << "WidthId1" << setw(9) << "WidthId2" << setw(9) << "WidthId3" << setw(11) << "RawId" << "\n";
+  DPGfile << "#" << setw(16) << "ieta" << setw(16) << "iphi" << setw(16) << "depth" << setw(16) << "SubDet" << setw(12) << "CapId0" << setw(12) << "CapId1" << setw(12) << "CapId2" << setw(12) << "CapId3" << setw(12) << "WidthId0" << setw(12) << "WidthId1" << setw(12) << "WidthId2" << setw(12) << "WidthId3" << setw(11) << "RawId" << "\n";
   DPGfileWidth << "# Unit is fC^2" << "\n";
-  DPGfileWidth << "#" << setw(16) << "ieta" << setw(16) << "iphi" << setw(16) << "depth" << setw(16) << "SubDet" << setw(9) << "Width0/0" << setw(9) << "Width0/1" << setw(9) << "Width0/2" << setw(9) << "Width0/3" << setw(9) << "Width1/0" << setw(9) << "Width1/1" << setw(9) << "Width1/2" << setw(9) << "Width1/3" << "Width2/0" << setw(9) << "Width2/1" << setw(9) << "Width2/2" << setw(9) << "Width2/3" << setw(9) << "Width3/0" << setw(9) << "Width3/1" << setw(9) << "Width3/2" << setw(9) << "Width3/3" << setw(11) << "RawId" << "\n";
+  DPGfileWidth << "#" << setw(16) << "ieta" << setw(16) << "iphi" << setw(16) << "depth" << setw(16) << "SubDet" << setw(12) << "Width0/0" << setw(12) << "Width0/1" << setw(12) << "Width0/2" << setw(12) << "Width0/3" << setw(12) << "Width1/0" << setw(12) << "Width1/1" << setw(12) << "Width1/2" << setw(12) << "Width1/3" << setw(12) << "Width2/0" << setw(12) << "Width2/1" << setw(12) << "Width2/2" << setw(12) << "Width2/3" << setw(12) << "Width3/0" << setw(12) << "Width3/1" << setw(12) << "Width3/2" << setw(12) << "Width3/3" << setw(11) << "RawId" << "\n";
   for (auto const& subdet : subdets){
     for (auto const& eta : CapIDarrayFC[subdet]){
       for (auto const& phi : CapIDarrayFC[subdet][eta.first]){
@@ -484,6 +510,7 @@ int main(int argc, char *argv[])
               pedsqsum = std::inner_product(CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].begin(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].end(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].begin(), 0.0);
               pedstd = sqrt(pedsqsum / CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].size() - pedmean * pedmean);
             }else{ // For HF, one CapID is empty: Get average of other entries
+              cout << "Averaging: det=" << subdet << ", eta=" << eta.first << ", phi=" << phi.first << ", depth=" << dep.first << ", capid=" << capid << endl;
               pedsum = 0.0;
               pedsqsum = 0.0;
               pedsize = 0;
@@ -498,15 +525,16 @@ int main(int argc, char *argv[])
               pedmean = pedsum / pedsize;
               pedstd = sqrt(pedsqsum / pedsize - pedmean * pedmean);
             }
+            if(subdet=="HE" and eta.first==-19 and phi.first==16 and dep.first==5 and capid==0) cout << "HE,-19,16,5,0: " << pedmean << ", " << pedstd << endl;
             CapIDMean[capid] = pedmean;
             CapIDStd[capid] = pedstd;
           }
-          DPGfile << setw(9) << CapIDMean[0] << setw(9) << CapIDMean[1] << setw(9) << CapIDMean[2] << setw(9) << CapIDMean[3];
-          DPGfile << setw(9) << CapIDStd[0] << setw(9) << CapIDStd[1] << setw(9) << CapIDStd[2] << setw(9) << CapIDStd[3];
-          DPGfileWidth << setw(9) << CapIDStd[0]*CapIDStd[0] << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << 0.0;
-          DPGfileWidth << setw(9) << 0.0 << setw(9) << CapIDStd[1]*CapIDStd[1] << setw(9) << 0.0 << setw(9) << 0.0;
-          DPGfileWidth << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << CapIDStd[2]*CapIDStd[2] << setw(9) << 0.0;
-          DPGfileWidth << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << CapIDStd[3]*CapIDStd[3];
+          DPGfile << setw(12) << CapIDMean[0] << setw(12) << CapIDMean[1] << setw(12) << CapIDMean[2] << setw(12) << CapIDMean[3];
+          DPGfile << setw(12) << CapIDStd[0] << setw(12) << CapIDStd[1] << setw(12) << CapIDStd[2] << setw(12) << CapIDStd[3];
+          DPGfileWidth << setw(12) << CapIDStd[0]*CapIDStd[0] << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0;
+          DPGfileWidth << setw(12) << 0.0 << setw(12) << CapIDStd[1]*CapIDStd[1] << setw(12) << 0.0 << setw(12) << 0.0;
+          DPGfileWidth << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << CapIDStd[2]*CapIDStd[2] << setw(12) << 0.0;
+          DPGfileWidth << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << CapIDStd[3]*CapIDStd[3];
           DPGfile << setw(11) << hex << rawIDarray[subdet][eta.first][phi.first][dep.first];
           DPGfile << "\n";
           DPGfileWidth << setw(11) << hex << rawIDarray[subdet][eta.first][phi.first][dep.first];
@@ -524,6 +552,7 @@ int main(int argc, char *argv[])
       for (auto const& phi : CheckMissing[subdet][eta.first]){
         for (auto const& dep : CheckMissing[subdet][eta.first][phi.first]){
           if(CheckMissing[subdet][eta.first][phi.first][dep.first]!=0){
+            cout << "Interpolating: det=" << subdet << ", eta=" << eta.first << ", phi=" << phi.first << ", depth=" << dep.first << endl;
             DPGfile << setw(17) << dec << eta.first << setw(16) << phi.first << setw(16) << dep.first << setw(16) << subdet;
             DPGfileWidth << setw(17) << dec << eta.first << setw(16) << phi.first << setw(16) << dep.first << setw(16) << subdet;
             for (int capid=0; capid<4; capid++) {
@@ -551,12 +580,12 @@ int main(int argc, char *argv[])
               CapIDMean[capid] = pedmean;
               CapIDStd[capid] = pedstd;
             }
-            DPGfile << setw(9) << CapIDMean[0] << setw(9) << CapIDMean[1] << setw(9) << CapIDMean[2] << setw(9) << CapIDMean[3];
-            DPGfile << setw(9) << CapIDStd[0] << setw(9) << CapIDStd[1] << setw(9) << CapIDStd[2] << setw(9) << CapIDStd[3];
-            DPGfileWidth << setw(9) << CapIDStd[0]*CapIDStd[0] << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << 0.0;
-            DPGfileWidth << setw(9) << 0.0 << setw(9) << CapIDStd[1]*CapIDStd[1] << setw(9) << 0.0 << setw(9) << 0.0;
-            DPGfileWidth << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << CapIDStd[2]*CapIDStd[2] << setw(9) << 0.0;
-            DPGfileWidth << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << 0.0 << setw(9) << CapIDStd[3]*CapIDStd[3];
+            DPGfile << setw(12) << CapIDMean[0] << setw(12) << CapIDMean[1] << setw(12) << CapIDMean[2] << setw(12) << CapIDMean[3];
+            DPGfile << setw(12) << CapIDStd[0] << setw(12) << CapIDStd[1] << setw(12) << CapIDStd[2] << setw(12) << CapIDStd[3];
+            DPGfileWidth << setw(12) << CapIDStd[0]*CapIDStd[0] << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0;
+            DPGfileWidth << setw(12) << 0.0 << setw(12) << CapIDStd[1]*CapIDStd[1] << setw(12) << 0.0 << setw(12) << 0.0;
+            DPGfileWidth << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << CapIDStd[2]*CapIDStd[2] << setw(12) << 0.0;
+            DPGfileWidth << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << CapIDStd[3]*CapIDStd[3];
             DPGfile << setw(11) << hex << CheckMissing[subdet][eta.first][phi.first][dep.first];
             DPGfile << "\n";
             DPGfileWidth << setw(11) << hex << rawIDarray[subdet][eta.first][phi.first][dep.first];
@@ -623,11 +652,12 @@ int main(int argc, char *argv[])
 
   ofstream xmlfile;
   xmlfile.open(floatday+".2023.xml");
-
-  auto MakeNewBrick = [&xmlfile](int crate, int slot, int elements){
+  //string tag = "hb12-13_he8_hf0_ho11_v14";
+  string tag = floatday+"_MeanPlus"+StrXtimesRMS+"RMS";
+  auto MakeNewBrick = [&xmlfile](int crate, int slot, int elements, string tag){
     xmlfile << "  <CFGBrick>" << "\n";
     xmlfile << "    <Parameter name=\"INFOTYPE\" type=\"string\">ZS</Parameter>" << "\n";
-    xmlfile << "    <Parameter name=\"CREATIONTAG\" type=\"string\">hb12-13_he8_hf0_ho11_v14</Parameter>" << "\n";
+    xmlfile << "    <Parameter name=\"CREATIONTAG\" type=\"string\">" << tag << "</Parameter>" << "\n";
     xmlfile << "    <Parameter name=\"CRATE\" type=\"int\">" << dec << crate << "</Parameter>" << "\n";
     xmlfile << "    <Parameter name=\"SLOT\" type=\"int\">" << dec << slot << "</Parameter>" << "\n";
     xmlfile << "    <Parameter name=\"TOPBOTTOM\" type=\"string\">utca</Parameter>" << "\n";
@@ -661,7 +691,7 @@ int main(int argc, char *argv[])
         maxchannel = 8;
       }
       elements = 24 * maxchannel; // 192 for HB, 144 for HE
-      MakeNewBrick(crate, slot, elements);
+      MakeNewBrick(crate, slot, elements, tag);
       for(int fiber=0; fiber<24; fiber++){
         bool FiberNotInUHTR = (modulo==2 and find(FibNotInMod2.begin(), FibNotInMod2.end(), fiber) != FibNotInMod2.end()) or (modulo==0 and find(FibNotInMod0.begin(), FibNotInMod0.end(), fiber) != FibNotInMod0.end());
         for(int channel=0; channel<maxchannel; channel++){
@@ -797,12 +827,12 @@ int main(int argc, char *argv[])
   vector<int> HFcrateVec{ 22, 29, 32 };
   for(int crate: HFcrateVec){
     for(int slot=1; slot<13; slot++){
-      MakeNewBrick(crate, slot, 96);
+      MakeNewBrick(crate, slot, 96, tag);
       xmlfile << "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0";
       EndBrick();
     }
   }
-  MakeNewBrick(38, 9, 96);
+  MakeNewBrick(38, 9, 96, tag);
   xmlfile << "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff";
   EndBrick();
 
@@ -811,7 +841,7 @@ int main(int argc, char *argv[])
   for(int crate: HOcrateVec){
     for(int slot=1; slot<10; slot++){
       if(crate!=26 and slot==9) continue;
-      MakeNewBrick(crate, slot, 72);
+      MakeNewBrick(crate, slot, 72, tag);
       xmlfile << "b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b";
       EndBrick();
     }
@@ -821,7 +851,7 @@ int main(int argc, char *argv[])
   xmlfile.close();
   ////
 
-
+  } // end if(!WholeRun)
 
   cout << "Saving results..." << endl;
 

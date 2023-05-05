@@ -9,12 +9,12 @@ import os, sys
 from array import array
 
 
-def ReadSaveFile():
-  with open('SaveFile.txt') as savefile:
+def ReadSaveFile(savefilename):
+  with open(savefilename) as savefile:
     lines = [line.rstrip() for line in savefile]
   if lines != sorted(lines): # Sort file
     print("Going to sort")
-    os.system('mv SaveFile.txt SaveFile.txt_old')
+    os.system('mv '+savefilename+' '+savefilename+'_old')
     # First remove duplicate entries with different result: Save newer one
     lines2 = []
     contains = []
@@ -33,7 +33,7 @@ def ReadSaveFile():
           #print('Going to replace "',delme,'" with "',l,'"')
       lines2.append(l)
     lastline = ""
-    with open('SaveFile.txt', 'w') as savefile:
+    with open(savefilename, 'w') as savefile:
       for l in sorted(lines2):
         if l==lastline: continue # Remove exact duplicates
         if l.split()[-1] == "0": continue # Ignore empty entries
@@ -62,7 +62,7 @@ def ReadSaveFile():
 
   return values
 
-def MakeGraph(values, trendtype, meanrms, what): # what in ["daysince", "lumi"]
+def MakeGraph(values, trendtype, meanrms, what): # what in ["daysince", "lumi", "wholerun"]
   allvals = {}
   for ID in values[trendtype]:
     yval = 0.0
@@ -73,6 +73,8 @@ def MakeGraph(values, trendtype, meanrms, what): # what in ["daysince", "lumi"]
       xval = int(ID.split("_")[1])
     elif what=="lumi":
       xval = float(ID.split("_")[0])
+    elif what=="wholerun":
+      xval = int(ID.split("_")[0])
     allvals[xval] = yval
 
   x = []
@@ -171,19 +173,26 @@ else:
   inputfile = "hist_CalibOutput_hadd.root"
 #fin.ls()
 
-if len(sys.argv)>2 and sys.argv[2] in ["daysince", "lumi"]:
+if len(sys.argv)>2 and sys.argv[2] in ["daysince", "lumi", "wholerun"]:
   dowhat = sys.argv[2]
 else:
   dowhat = "daysince"
 
-output = inputfile.split(".")[0]+"_"+dowhat+"/"
-if not os.path.isdir(output): os.mkdir(output)
-fin=ROOT.TFile.Open(inputfile, "READ")
+if dowhat!="wholerun":
+  output = inputfile.split(".")[0]+"_"+dowhat+"/"
+  if not os.path.isdir(output): os.mkdir(output)
+  fin=ROOT.TFile.Open(inputfile, "READ")
+else:
+  output = "WholeRunOutput_"+inputfile+"/"
 
+savefilename = 'SaveFile.txt'
 if dowhat == "daysince":
   xtitle = "Days since 6th April 2023" #"Days since 5th July"
 elif dowhat == "lumi":
   xtitle = "Luminosity [fb^{-1}]"
+elif dowhat == "wholerun":
+  xtitle = "Luminosity section"
+  savefilename = 'SaveFile_'+inputfile+'.txt'
 
 runstoplot = []
 if len(sys.argv)>3:
@@ -191,7 +200,7 @@ if len(sys.argv)>3:
 
 
 ##### Prepare trend plots
-values = ReadSaveFile()
+values = ReadSaveFile(savefilename)
 trends = []
 for trend in values:
   if trend not in trends: trends.append(trend)
@@ -309,18 +318,20 @@ for title in grdict:
       label = subdet + " " + sizename + ""
       legend[-1].AddEntry(gr[part][meanrms], label, "pl")
     # Vertical lines at 1st of every month
-    monthlines = []
-    for linehere in [31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]:
-      linehere = linehere - 96 # Start counting from 6th April instead of 1st January
-      if lowedge > linehere or upedge < linehere: continue
-      monthlines.append(ROOT.TLine(linehere, thismin - (thismax-thismin)*0.2, linehere, thismax + (thismax-thismin)*0.3))
-      monthlines[-1].SetLineStyle(3)
-      monthlines[-1].Draw("SAME")
+    if dowhat=="daysince":
+      monthlines = []
+      for linehere in [31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]:
+        linehere = linehere - 95 # Start counting from 6th April instead of 1st January
+        if lowedge > linehere or upedge < linehere: continue
+        monthlines.append(ROOT.TLine(linehere, thismin - (thismax-thismin)*0.2, linehere, thismax + (thismax-thismin)*0.3))
+        monthlines[-1].SetLineStyle(3)
+        monthlines[-1].Draw("SAME")
     legend[-1].Draw()
     c[-1].Draw()
     c[-1].SaveAs(output+title.replace(" ", "_")+"_"+unit+".png")
     c[-1].SaveAs(output+title.replace(" ", "_")+"_"+unit+".pdf")
 
+if dowhat=="wholerun": exit()
 
 ##### Prepare runs for histograms
 if runstoplot!=[]:
