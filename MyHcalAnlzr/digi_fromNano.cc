@@ -28,13 +28,25 @@ int main(int argc, char *argv[])
     cerr << "Invalid arguments provided, correct format is: ./main kind(Full/Ped) days lumi floatday runid\n";
     exit(0);
   }*/
-
   //string runid = argv[1]; // Integer
   string floatday = argv[1]; // String, e.g. "22.02"
-  bool WholeRun = false;
-  if(argc>1) WholeRun = argv[2]; // When doing a whole run, floatday will actually be the input filename. LS shall be added to output name
-  float XtimesRMS = 3.5; // Set new ZS thresholds to "Mean + X * RMS + Y"
-  string StrXtimesRMS = "3.5"; // Same as above, as string (to_string doesn't work because there's trailing zeros)
+  int Whole = 0;
+  if(argc>2) Whole = stoi(argv[2]); // When doing a whole run (=1), floatday will actually be the input filename. LS shall be added to output name. WholeFill=FillNr
+  int Nentry = 1;
+  //if(argc>3) Nentry = stoi(argv[3]); // In steps of 500 events at a time, make "Nentry" individual measurements at a time.
+  // New: Need to skim input first: it's an unknown, less than 500 now: Get all values.
+  vector<int> nentries;
+  if(argc>3){
+    while(argc>2+Nentry){
+      nentries.push_back(stoi(argv[2+Nentry]));
+      Nentry++;
+    }
+    Nentry--;
+  }else{
+    nentries.push_back(-1);
+  }
+  float XtimesRMS = 3.0; // Set new ZS thresholds to "Mean + X * RMS + Y"
+  string StrXtimesRMS = "3"; // Same as above, as string (to_string doesn't work because there's trailing zeros)
   float RMSplusY = 0.0; // Set new ZS thresholds to "Mean + X * RMS + Y"
   float LessForHBM09RM3 = 0.0;
   int ZSminimum = 6; // Define minimum ZS, specifically for HBP14 RM1
@@ -43,13 +55,13 @@ int main(int argc, char *argv[])
 
   // New: Get input based on date in name, then find run number
   string fileName;
-  for (const auto & entry : filesystem::directory_iterator("/eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/")){
-    fileName = entry.path().filename().string();
+  for (const auto & entry_ : filesystem::directory_iterator("/eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/")){
+    fileName = entry_.path().filename().string();
     if (fileName.find(floatday) != string::npos){
       break;
     }
   }
-  string runid = fileName.substr(25, 6);
+  string runid = "Run"+fileName.substr(25, 6);
 
   // There is a DISGUSTING amount of hardcoding here; unfortunately I wasn't able to loop over subdets or time slices.
 
@@ -235,18 +247,23 @@ int main(int argc, char *argv[])
 
   uint LS;
   qiedigi->SetBranchAddress("luminosityBlock", &LS);
-  if(WholeRun){
+  if(Whole==1){
     qiedigi->GetEntry(0);
     floatday = "LS"+to_string(LS)+"_"+floatday;
+  }else if(Whole!=0){
+    runid = "Fill"+to_string(Whole);
   }
 
-  TFile *ofile = new TFile(("hist_CalibOutput_run"+runid+"_"+floatday+".root").c_str(), "recreate");
+  TFile *ofile = new TFile(("hist_CalibOutput_"+runid+"_"+floatday+".root").c_str(), "recreate");
 
   cout << "Creating base histograms..." << endl;
 
   vector<string> subdets{"HB", "HE", "HF", "HO"};
-  map<string, map<string, map<int, map<int, map<int, TH1F*>>>>> histarrayFC, histarrayADC; // Subdet, SiPM size, ieta, iphi, depth;  value is histogram filled with fC/ADC values
-  map<string, map<int, map<int, map<int, map<int, vector<float>>>>>> CapIDarrayFC; // Subdet, ieta, iphi, depth, capid;  value is vector of fC values
+  map<string, map<string, map<int, map<int, map<int, map<int, TH1F*>>>>>> histarrayFC, histarrayADC; // Subdet, SiPM size, ieta, iphi, depth, entry;  value is histogram filled with fC/ADC values
+  map<string, map<string, map<int, map<int, map<int, pair<float, float>>>>>> histarrayFCfull, histarrayADCfull; // As above, but contains Mean/RMS averaged over entries
+  map<string, map<string, map<int, map<int, map<int, vector<pair<float, float>>>>>>> histarrayFCtemp, histarrayADCtemp; // Because of memory issues, can't keep all TH1F: Save means/RMSs here before deleting hists
+  map<string, map<int, map<int, map<int, map<int, map<int, vector<float>>>>>>> CapIDarrayFC; // Subdet, ieta, iphi, depth, capid, entry;  value is vector of fC values
+  map<string, map<int, map<int, map<int, map<int, map<int, pair<float, float>>>>>>> CapIDarrayFCmeanstd; // As above, but contains determined Mean/RMS per entry
   map<string, map<int, map<int, map<int, int>>>> rawIDarray; // Subdet, ieta, iphi, depth;  value is int of RawId
   map<string, map<int, map<int, map<int, int>>>> CheckMissing; // Subdet, ieta, iphi, depth;  value is int of RawId
 
@@ -314,8 +331,15 @@ int main(int argc, char *argv[])
   int N, ieta, iphi, depth, evtype, sipmtype;
   float fcsum, adcsum;
   int doneevents=0;
+  int fillnextentry=nentries[0];
+  int entry=1;
   for(int i=0; i<ntot; i++){
-    if(i%100==0) cout << i << "-th event." << endl;
+    if((i+1)%100==0) cout << i+1 << "-th event." << endl;
+    if(Nentry>1 && i==fillnextentry){
+      fillnextentry += nentries[entry];
+      entry++;
+      cout << "Filling entry " << entry << " after event " << i << endl;
+    }
     qiedigi->GetEntry(i);
     evtype = eventtype; // UChar_t -> Int conversion
     if(evtype!=1) continue; // PED events only
@@ -357,22 +381,23 @@ int main(int argc, char *argv[])
         //if (histarrayFC[subdet.first].find(size) == histarrayFC[subdet.first].end()) histarrayFC[subdet.first][size];
         //if (histarrayFC[subdet.first][size].find(ieta) == histarrayFC[subdet.first][size].end()) histarrayFC[subdet.first][size][ieta];
         //if (histarrayFC[subdet.first][size][ieta].find(iphi) == histarrayFC[subdet.first][size][ieta].end()) histarrayFC[subdet.first][size][ieta][iphi];
-        if (histarrayFC[subdet][size][ieta][iphi].find(depth) == histarrayFC[subdet][size][ieta][iphi].end()){
-          histarrayFC[subdet][size][ieta][iphi][depth] = new TH1F(("hist_run"+runid+"_subdet"+subdet+size+"_ieta"+to_string(ieta)+"_iphi"+to_string(iphi)+"_depth"+to_string(depth)+"_FC").c_str(), "Pedestal per Channel; fC; Entries", 10000, 0, 1000); // TODO
-          histarrayADC[subdet][size][ieta][iphi][depth] = new TH1F(("hist_run"+runid+"_subdet"+subdet+size+"_ieta"+to_string(ieta)+"_iphi"+to_string(iphi)+"_depth"+to_string(depth)+"_ADC").c_str(), "Pedestal per Channel; ADC; Entries", 960, 0, 32);
+        if (histarrayFC[subdet][size][ieta][iphi][depth].find(entry) == histarrayFC[subdet][size][ieta][iphi][depth].end()){
+          //if(entry==13) cout << "create " << subdet << ", " << size << ", " << ieta << ", " << iphi << ", " << depth << ", " << entry << endl;
+          histarrayFC[subdet][size][ieta][iphi][depth][entry] = new TH1F(("hist_"+runid+"_subdet"+subdet+size+"_ieta"+to_string(ieta)+"_iphi"+to_string(iphi)+"_depth"+to_string(depth)+"_"+to_string(entry)+"_FC").c_str(), "Pedestal per Channel; fC; Entries", 10000, 0, 1000); // TODO
+          histarrayADC[subdet][size][ieta][iphi][depth][entry] = new TH1F(("hist_"+runid+"_subdet"+subdet+size+"_ieta"+to_string(ieta)+"_iphi"+to_string(iphi)+"_depth"+to_string(depth)+"_"+to_string(entry)+"_ADC").c_str(), "Pedestal per Channel; ADC; Entries", 960, 0, 32);
         }
 
         if(subdet=="HB"){
           fcsum = (DigiHB_fc0[j]+DigiHB_fc1[j]+DigiHB_fc2[j]+DigiHB_fc3[j]+DigiHB_fc4[j]+DigiHB_fc5[j]+DigiHB_fc6[j]+DigiHB_fc7[j]) / 8.0;
           adcsum = (DigiHB_adc0[j]+DigiHB_adc1[j]+DigiHB_adc2[j]+DigiHB_adc3[j]+DigiHB_adc4[j]+DigiHB_adc5[j]+DigiHB_adc6[j]+DigiHB_adc7[j]) / 8.0;
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid0[j]].push_back(DigiHB_fc0[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid1[j]].push_back(DigiHB_fc1[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid2[j]].push_back(DigiHB_fc2[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid3[j]].push_back(DigiHB_fc3[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid4[j]].push_back(DigiHB_fc4[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid5[j]].push_back(DigiHB_fc5[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid6[j]].push_back(DigiHB_fc6[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid7[j]].push_back(DigiHB_fc7[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid0[j]][entry].push_back(DigiHB_fc0[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid1[j]][entry].push_back(DigiHB_fc1[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid2[j]][entry].push_back(DigiHB_fc2[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid3[j]][entry].push_back(DigiHB_fc3[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid4[j]][entry].push_back(DigiHB_fc4[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid5[j]][entry].push_back(DigiHB_fc5[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid6[j]][entry].push_back(DigiHB_fc6[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHB_capid7[j]][entry].push_back(DigiHB_fc7[j]);
           rawIDarray[subdet][ieta][iphi][depth] = DigiHB_rawId[j];
           ADCvsFC->Fill(DigiHB_adc0[j], DigiHB_fc0[j]);
           ADCvsFC->Fill(DigiHB_adc1[j], DigiHB_fc1[j]);
@@ -401,14 +426,14 @@ int main(int argc, char *argv[])
             }
             //cout << DigiHE_fc0[j] << ", " << DigiHE_fc1[j] << ", " << DigiHE_fc2[j] << ", " << DigiHE_fc3[j] << ", " << DigiHE_fc4[j] << ", " << DigiHE_fc5[j] << ", " << DigiHE_fc6[j] << ", " << DigiHE_fc7[j] << "; AvgFC: " << fcsum << "; AvgADC: " << adcsum << endl;
           }
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid0[j]].push_back(DigiHE_fc0[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid1[j]].push_back(DigiHE_fc1[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid2[j]].push_back(DigiHE_fc2[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid3[j]].push_back(DigiHE_fc3[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid4[j]].push_back(DigiHE_fc4[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid5[j]].push_back(DigiHE_fc5[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid6[j]].push_back(DigiHE_fc6[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid7[j]].push_back(DigiHE_fc7[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid0[j]][entry].push_back(DigiHE_fc0[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid1[j]][entry].push_back(DigiHE_fc1[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid2[j]][entry].push_back(DigiHE_fc2[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid3[j]][entry].push_back(DigiHE_fc3[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid4[j]][entry].push_back(DigiHE_fc4[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid5[j]][entry].push_back(DigiHE_fc5[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid6[j]][entry].push_back(DigiHE_fc6[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHE_capid7[j]][entry].push_back(DigiHE_fc7[j]);
           rawIDarray[subdet][ieta][iphi][depth] = DigiHE_rawId[j];
           ADCvsFC->Fill(DigiHE_adc0[j], DigiHE_fc0[j]);
           ADCvsFC->Fill(DigiHE_adc1[j], DigiHE_fc1[j]);
@@ -421,30 +446,139 @@ int main(int argc, char *argv[])
         }else if (subdet=="HF"){
           fcsum = (DigiHF_fc0[j]+DigiHF_fc1[j]+DigiHF_fc2[j]) / 3.0;
           adcsum = (DigiHF_adc0[j]+DigiHF_adc1[j]+DigiHF_adc2[j]) / 3.0;
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHF_capid0[j]].push_back(DigiHF_fc0[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHF_capid1[j]].push_back(DigiHF_fc1[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHF_capid2[j]].push_back(DigiHF_fc2[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHF_capid0[j]][entry].push_back(DigiHF_fc0[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHF_capid1[j]][entry].push_back(DigiHF_fc1[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHF_capid2[j]][entry].push_back(DigiHF_fc2[j]);
           rawIDarray[subdet][ieta][iphi][depth] = DigiHF_rawId[j];
         }else if (subdet=="HO"){
           fcsum = (DigiHO_fc0[j]+DigiHO_fc1[j]+DigiHO_fc2[j]+DigiHO_fc3[j]+DigiHO_fc4[j]+DigiHO_fc5[j]+DigiHO_fc6[j]+DigiHO_fc7[j]+DigiHO_fc8[j]+DigiHO_fc9[j]) / 10.0;
           adcsum = (DigiHO_adc0[j]+DigiHO_adc1[j]+DigiHO_adc2[j]+DigiHO_adc3[j]+DigiHO_adc4[j]+DigiHO_adc5[j]+DigiHO_adc6[j]+DigiHO_adc7[j]+DigiHO_adc8[j]+DigiHO_adc9[j]) / 10.0;
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid0[j]].push_back(DigiHO_fc0[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid1[j]].push_back(DigiHO_fc1[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid2[j]].push_back(DigiHO_fc2[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid3[j]].push_back(DigiHO_fc3[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid4[j]].push_back(DigiHO_fc4[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid5[j]].push_back(DigiHO_fc5[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid6[j]].push_back(DigiHO_fc6[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid7[j]].push_back(DigiHO_fc7[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid8[j]].push_back(DigiHO_fc8[j]);
-          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid9[j]].push_back(DigiHO_fc9[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid0[j]][entry].push_back(DigiHO_fc0[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid1[j]][entry].push_back(DigiHO_fc1[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid2[j]][entry].push_back(DigiHO_fc2[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid3[j]][entry].push_back(DigiHO_fc3[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid4[j]][entry].push_back(DigiHO_fc4[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid5[j]][entry].push_back(DigiHO_fc5[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid6[j]][entry].push_back(DigiHO_fc6[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid7[j]][entry].push_back(DigiHO_fc7[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid8[j]][entry].push_back(DigiHO_fc8[j]);
+          CapIDarrayFC[subdet][ieta][iphi][depth][DigiHO_capid9[j]][entry].push_back(DigiHO_fc9[j]);
           rawIDarray[subdet][ieta][iphi][depth] = DigiHO_rawId[j];
         }
-        histarrayFC[subdet][size][ieta][iphi][depth]->Fill(fcsum);
-        histarrayADC[subdet][size][ieta][iphi][depth]->Fill(adcsum);
+        histarrayFC[subdet][size][ieta][iphi][depth][entry]->Fill(fcsum);
+        histarrayADC[subdet][size][ieta][iphi][depth][entry]->Fill(adcsum);
       }
     }
 
+    if((Nentry>1 && i+1==fillnextentry) || (i+1==ntot)){
+      //cout << "Filling temp vectors" << endl;
+      for (auto const& subdet : subdets){
+        for (auto const& siz : histarrayFC[subdet]){
+          //if(siz.first=="_sipmSmall") size = "Small";
+          //if(siz.first=="_sipmLarge") size = "Large";
+          for (auto const& eta : histarrayFC[subdet][siz.first]){
+            for (auto const& phi : histarrayFC[subdet][siz.first][eta.first]){
+              for (auto const& dep : histarrayFC[subdet][siz.first][eta.first][phi.first]){
+                //if (histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first].find(1) != histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first].end()){
+                if (histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first].count(entry)){
+                  if (histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first][entry]->GetEntries() > 0){
+                    float mymeanadc=0.0, myrmsadc=0.0, mymeanfc=0.0, myrmsfc=0.0;
+                    mymeanadc = histarrayADC[subdet][siz.first][eta.first][phi.first][dep.first][entry]->GetMean();
+                    myrmsadc = histarrayADC[subdet][siz.first][eta.first][phi.first][dep.first][entry]->GetRMS();
+                    mymeanfc = histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first][entry]->GetMean();
+                    myrmsfc = histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first][entry]->GetRMS();
+                    histarrayADCtemp[subdet][siz.first][eta.first][phi.first][dep.first].push_back(make_pair(mymeanadc, myrmsadc));
+                    histarrayFCtemp[subdet][siz.first][eta.first][phi.first][dep.first].push_back(make_pair(mymeanfc, myrmsfc));
+                    //cout << "Filled" << endl;
+                    if(!((Nentry/2)+1==entry)){ // Save these later
+                      delete histarrayADC[subdet][siz.first][eta.first][phi.first][dep.first][entry];
+                      delete histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first][entry];
+                    } 
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+  // Get Mean/RMS:
+  // When Nentry==1, it's just reading out the Mean/RMS from the histograms, and putting them in a new map
+  // When Nentry>1, it averages all Mean/RMS per entry
+  // For CapID: Calculate Mean/Std individually, then average later
+  for (auto const& subdet : subdets){
+    for (auto const& siz : histarrayFC[subdet]){
+      //if(siz.first=="_sipmSmall") size = "Small";
+      //if(siz.first=="_sipmLarge") size = "Large";
+      for (auto const& eta : histarrayFC[subdet][siz.first]){
+        for (auto const& phi : histarrayFC[subdet][siz.first][eta.first]){
+          for (auto const& dep : histarrayFC[subdet][siz.first][eta.first][phi.first]){
+            //if (histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first].find(1) != histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first].end()){
+            if (histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first].count((Nentry/2)+1)){
+              if (histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first][(Nentry/2)+1]->GetEntries() > 0){
+                float mymeanadc=0.0, myrmsadc=0.0, mymeanfc=0.0, myrmsfc=0.0;
+                for(int ent=0; ent<Nentry; ent++){
+                  //cout << histarrayADCtemp[subdet][siz.first][eta.first][phi.first][dep.first].size() << endl;
+                  //mymeanadc += histarrayADC[subdet][siz.first][eta.first][phi.first][dep.first][ent]->GetMean();
+                  //myrmsadc += histarrayADC[subdet][siz.first][eta.first][phi.first][dep.first][ent]->GetRMS();
+                  //mymeanfc += histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first][ent]->GetMean();
+                  //myrmsfc += histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first][ent]->GetRMS();
+                  mymeanadc += histarrayADCtemp[subdet][siz.first][eta.first][phi.first][dep.first][ent].first;
+                  myrmsadc += histarrayADCtemp[subdet][siz.first][eta.first][phi.first][dep.first][ent].second;
+                  mymeanfc += histarrayFCtemp[subdet][siz.first][eta.first][phi.first][dep.first][ent].first;
+                  myrmsfc += histarrayFCtemp[subdet][siz.first][eta.first][phi.first][dep.first][ent].second;
+                }
+                histarrayADCfull[subdet][siz.first][eta.first][phi.first][dep.first].first = mymeanadc / Nentry;
+                histarrayADCfull[subdet][siz.first][eta.first][phi.first][dep.first].second = myrmsadc / Nentry;
+                histarrayFCfull[subdet][siz.first][eta.first][phi.first][dep.first].first = mymeanfc / Nentry;
+                histarrayFCfull[subdet][siz.first][eta.first][phi.first][dep.first].second = myrmsfc / Nentry;
+                //cout << subdet << ", " << siz.first << ", " << eta.first << ", " << phi.first << ", " << dep.first << endl;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  float pedsum, pedmean, pedsqsum, pedstd;
+  int pedsize;
+  for (auto const& subdet : subdets){
+    for (auto const& eta : CapIDarrayFC[subdet]){
+      for (auto const& phi : CapIDarrayFC[subdet][eta.first]){
+        for (auto const& dep : CapIDarrayFC[subdet][eta.first][phi.first]){
+          for (int capid=0; capid<4; capid++) { // for (auto const& capid : CapIDarrayFC[subdet][eta.first][phi.first][dep.first]){
+            for(int ent=1; ent<=Nentry; ent++){
+              if (!CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid][ent].empty()){
+                pedsum = std::accumulate(CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid][ent].begin(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid][ent].end(), 0.0);
+                pedmean = pedsum / CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid][ent].size();
+                pedsqsum = std::inner_product(CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid][ent].begin(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid][ent].end(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid][ent].begin(), 0.0);
+                pedstd = sqrt(pedsqsum / CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid][ent].size() - pedmean * pedmean);
+              }else{ // For HF, one CapID is empty: Get average of other entries
+                //cout << "Averaging: det=" << subdet << ", eta=" << eta.first << ", phi=" << phi.first << ", depth=" << dep.first << ", capid=" << capid << endl;
+                pedsum = 0.0;
+                pedsqsum = 0.0;
+                pedsize = 0;
+                for (int capidtemp=0; capidtemp<4; capidtemp++) { // for (auto const& capidtemp : CapIDarrayFC[subdet][eta.first][phi.first][dep.first]){
+                  if (!CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp][ent].empty()){
+                    pedsum += std::accumulate(CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp][ent].begin(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp][ent].end(), 0.0);
+                    pedsqsum += std::inner_product(CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp][ent].begin(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp][ent].end(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp][ent].begin(), 0.0);
+                    pedsize += CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capidtemp][ent].size();
+                  }
+                }
+                // if(pedsize==0) break; // No CapID has entries: It's missing channel! Fill below by interpolation. (But code shouldn't pass through here, because it wouldn't even enter the capid loop above.)
+                pedmean = pedsum / pedsize;
+                pedstd = sqrt(pedsqsum / pedsize - pedmean * pedmean);
+              }
+              CapIDarrayFCmeanstd[subdet][eta.first][phi.first][dep.first][capid][ent].first = pedmean;
+              CapIDarrayFCmeanstd[subdet][eta.first][phi.first][dep.first][capid][ent].second = pedstd;
+            }
+          }
+        }
+      }
+    }
   }
 
   // Test for comparing measured FC-ADC conversion and table
@@ -455,25 +589,25 @@ int main(int argc, char *argv[])
   }
   ADCvsFC->GetXaxis()->SetRange(0,0); // Reset*/
 
-  if(!WholeRun){
+  //if(!WholeRun){
 
   cout << "Writing table..." << endl;
 
   ofstream tablefile;
-  tablefile.open("Table_Run"+runid+"_"+floatday+".2023.txt");
+  tablefile.open("Table_"+runid+"_"+floatday+".2023.txt");
   tablefile << setw(8) << "SubDet" << setw(8) << "SiPM" << setw(8) << "ieta" << setw(8) << "iphi" << setw(8) << "depth" << setw(12) << "ADC Mean" << setw(12) << "ADC RMS" << setw(12) << "fC Mean" << setw(12) << "fC RMS" << "\n";
   for (auto const& subdet : subdets){
-    for (auto const& siz : histarrayFC[subdet]){
+    for (auto const& siz : histarrayFCfull[subdet]){
       if(siz.first=="_sipmSmall") size = "Small";
       if(siz.first=="_sipmLarge") size = "Large";
-      for (auto const& eta : histarrayFC[subdet][siz.first]){
-        for (auto const& phi : histarrayFC[subdet][siz.first][eta.first]){
-          for (auto const& dep : histarrayFC[subdet][siz.first][eta.first][phi.first]){
-            if (histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first]->GetEntries() > 0){
+      for (auto const& eta : histarrayFCfull[subdet][siz.first]){
+        for (auto const& phi : histarrayFCfull[subdet][siz.first][eta.first]){
+          for (auto const& dep : histarrayFCfull[subdet][siz.first][eta.first][phi.first]){
+            //if (histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first]->GetEntries() > 0){
               tablefile << setw(8) << subdet << setw(8) << size << setw(8) << eta.first << setw(8) << phi.first << setw(8) << dep.first;
-              tablefile << setw(12) << histarrayADC[subdet][siz.first][eta.first][phi.first][dep.first]->GetMean() << setw(12) << histarrayADC[subdet][siz.first][eta.first][phi.first][dep.first]->GetRMS();
-              tablefile << setw(12) << histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first]->GetMean() << setw(12) << histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first]->GetRMS() << "\n";
-            }
+              tablefile << setw(12) << histarrayADCfull[subdet][siz.first][eta.first][phi.first][dep.first].first << setw(12) << histarrayADCfull[subdet][siz.first][eta.first][phi.first][dep.first].second;
+              tablefile << setw(12) << histarrayFCfull[subdet][siz.first][eta.first][phi.first][dep.first].first << setw(12) << histarrayFCfull[subdet][siz.first][eta.first][phi.first][dep.first].second << "\n";
+            //}
           }
         }
       }
@@ -484,13 +618,11 @@ int main(int argc, char *argv[])
 
   cout << "Writing DPG pedestal tables..." << endl;
 
-  float pedsum, pedmean, pedsqsum, pedstd;
   float CapIDMean[4], CapIDStd[4];
-  int pedsize;
   ofstream DPGfile;
   ofstream DPGfileWidth;
-  DPGfile.open("PedestalTable_Run"+runid+"_"+floatday+".2023.txt");
-  DPGfileWidth.open("PedestalTableWidth_Run"+runid+"_"+floatday+".2023.txt");
+  DPGfile.open("PedestalTable_"+runid+"_"+floatday+".2023.txt");
+  DPGfileWidth.open("PedestalTableWidth_"+runid+"_"+floatday+".2023.txt");
   DPGfile << "# Unit is fC" << "\n";
   DPGfile << "#" << setw(16) << "ieta" << setw(16) << "iphi" << setw(16) << "depth" << setw(16) << "SubDet" << setw(12) << "CapId0" << setw(12) << "CapId1" << setw(12) << "CapId2" << setw(12) << "CapId3" << setw(12) << "WidthId0" << setw(12) << "WidthId1" << setw(12) << "WidthId2" << setw(12) << "WidthId3" << setw(11) << "RawId" << "\n";
   DPGfileWidth << "# Unit is fC^2" << "\n";
@@ -504,13 +636,13 @@ int main(int argc, char *argv[])
           for (int capid=0; capid<4; capid++) { // for (auto const& capid : CapIDarrayFC[subdet][eta.first][phi.first][dep.first]){
             CapIDMean[capid] = 0.0;
             CapIDStd[capid] = 0.0;
-            if (!CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].empty()){
+            /*if (!CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].empty()){
               pedsum = std::accumulate(CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].begin(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].end(), 0.0);
               pedmean = pedsum / CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].size();
               pedsqsum = std::inner_product(CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].begin(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].end(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].begin(), 0.0);
               pedstd = sqrt(pedsqsum / CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].size() - pedmean * pedmean);
             }else{ // For HF, one CapID is empty: Get average of other entries
-              cout << "Averaging: det=" << subdet << ", eta=" << eta.first << ", phi=" << phi.first << ", depth=" << dep.first << ", capid=" << capid << endl;
+              //cout << "Averaging: det=" << subdet << ", eta=" << eta.first << ", phi=" << phi.first << ", depth=" << dep.first << ", capid=" << capid << endl;
               pedsum = 0.0;
               pedsqsum = 0.0;
               pedsize = 0;
@@ -524,10 +656,16 @@ int main(int argc, char *argv[])
               // if(pedsize==0) break; // No CapID has entries: It's missing channel! Fill below by interpolation. (But code shouldn't pass through here, because it wouldn't even enter the capid loop above.)
               pedmean = pedsum / pedsize;
               pedstd = sqrt(pedsqsum / pedsize - pedmean * pedmean);
+            }*/
+            //if(subdet=="HE" and eta.first==-19 and phi.first==16 and dep.first==5 and capid==0) cout << "HE,-19,16,5,0: " << pedmean << ", " << pedstd << endl;
+            pedmean = 0.0;
+            pedstd = 0.0;
+            for(int ent=1; ent<=Nentry; ent++){
+              pedmean += CapIDarrayFCmeanstd[subdet][eta.first][phi.first][dep.first][capid][ent].first;
+              pedstd += CapIDarrayFCmeanstd[subdet][eta.first][phi.first][dep.first][capid][ent].second;
             }
-            if(subdet=="HE" and eta.first==-19 and phi.first==16 and dep.first==5 and capid==0) cout << "HE,-19,16,5,0: " << pedmean << ", " << pedstd << endl;
-            CapIDMean[capid] = pedmean;
-            CapIDStd[capid] = pedstd;
+            CapIDMean[capid] = pedmean/Nentry;
+            CapIDStd[capid] = pedstd/Nentry;
           }
           DPGfile << setw(12) << CapIDMean[0] << setw(12) << CapIDMean[1] << setw(12) << CapIDMean[2] << setw(12) << CapIDMean[3];
           DPGfile << setw(12) << CapIDStd[0] << setw(12) << CapIDStd[1] << setw(12) << CapIDStd[2] << setw(12) << CapIDStd[3];
@@ -547,38 +685,45 @@ int main(int argc, char *argv[])
 
   // Now get values for missing channels: Average over all (available) adjacent eta and phi +/- 1
   int myeta, myphi;
+  float pedmean_full, pedstd_full;
   for (auto const& subdet : subdets){
     for (auto const& eta : CheckMissing[subdet]){
       for (auto const& phi : CheckMissing[subdet][eta.first]){
         for (auto const& dep : CheckMissing[subdet][eta.first][phi.first]){
           if(CheckMissing[subdet][eta.first][phi.first][dep.first]!=0){
-            cout << "Interpolating: det=" << subdet << ", eta=" << eta.first << ", phi=" << phi.first << ", depth=" << dep.first << endl;
+            //cout << "Interpolating: det=" << subdet << ", eta=" << eta.first << ", phi=" << phi.first << ", depth=" << dep.first << endl;
             DPGfile << setw(17) << dec << eta.first << setw(16) << phi.first << setw(16) << dep.first << setw(16) << subdet;
             DPGfileWidth << setw(17) << dec << eta.first << setw(16) << phi.first << setw(16) << dep.first << setw(16) << subdet;
             for (int capid=0; capid<4; capid++) {
-              pedsum = 0.0;
-              pedsqsum = 0.0;
-              pedsize = 0;
               CapIDMean[capid] = 0.0;
               CapIDStd[capid] = 0.0;
-              for (int etavar=-1; etavar<2; etavar++) {
-                for (int phivar=-1; phivar<2; phivar++) {
-                  myeta = eta.first+etavar;
-                  myphi = phi.first+phivar;
-                  if (myeta==0) myeta=-eta.first; // either eta in "0,1,2"->"-1,1,2" or "-2,-1,0"->"-2,-1,1"
-                  if (myphi==0) myphi=72;
-                  if (myphi==73) myphi=1;
-                  if (!CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].empty()){
-                    pedsum = pedsum + std::accumulate(CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].begin(), CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].end(), 0.0);
-                    pedsqsum = pedsqsum + std::inner_product(CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].begin(), CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].end(), CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].begin(), 0.0);
-                    pedsize = pedsize + CapIDarrayFC[subdet][myeta][myphi][dep.first][capid].size();
+              pedmean_full = 0.0;
+              pedstd_full = 0.0;
+              for(int ent=1; ent<=Nentry; ent++){
+                pedsum = 0.0;
+                pedsqsum = 0.0;
+                pedsize = 0;
+                for (int etavar=-1; etavar<2; etavar++) {
+                  for (int phivar=-1; phivar<2; phivar++) {
+                    myeta = eta.first+etavar;
+                    myphi = phi.first+phivar;
+                    if (myeta==0) myeta=-eta.first; // either eta in "0,1,2"->"-1,1,2" or "-2,-1,0"->"-2,-1,1"
+                    if (myphi==0) myphi=72;
+                    if (myphi==73) myphi=1;
+                    if (!CapIDarrayFC[subdet][myeta][myphi][dep.first][capid][ent].empty()){
+                      pedsum = pedsum + std::accumulate(CapIDarrayFC[subdet][myeta][myphi][dep.first][capid][ent].begin(), CapIDarrayFC[subdet][myeta][myphi][dep.first][capid][ent].end(), 0.0);
+                      pedsqsum = pedsqsum + std::inner_product(CapIDarrayFC[subdet][myeta][myphi][dep.first][capid][ent].begin(), CapIDarrayFC[subdet][myeta][myphi][dep.first][capid][ent].end(), CapIDarrayFC[subdet][myeta][myphi][dep.first][capid][ent].begin(), 0.0);
+                      pedsize = pedsize + CapIDarrayFC[subdet][myeta][myphi][dep.first][capid][ent].size();
+                    }
                   }
                 }
+                pedmean = pedsum / pedsize;
+                pedstd = sqrt(pedsqsum / pedsize - pedmean * pedmean);
+                pedmean_full += pedmean;
+                pedstd_full += pedstd;
               }
-              pedmean = pedsum / pedsize;
-              pedstd = sqrt(pedsqsum / pedsize - pedmean * pedmean);
-              CapIDMean[capid] = pedmean;
-              CapIDStd[capid] = pedstd;
+              CapIDMean[capid] = pedmean_full / Nentry;
+              CapIDStd[capid] = pedstd_full / Nentry;
             }
             DPGfile << setw(12) << CapIDMean[0] << setw(12) << CapIDMean[1] << setw(12) << CapIDMean[2] << setw(12) << CapIDMean[3];
             DPGfile << setw(12) << CapIDStd[0] << setw(12) << CapIDStd[1] << setw(12) << CapIDStd[2] << setw(12) << CapIDStd[3];
@@ -752,52 +897,52 @@ int main(int argc, char *argv[])
                 // ZS is Mean+RMS of each channel, rounded up
                 // SiPM: Large or Small? Check both
                 if(histarrayADC[subdet]["_sipmLarge"][eta][phi].find(dep) != histarrayADC[subdet]["_sipmLarge"][eta][phi].end()){
-                  largeEntries = histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetEntries();
+                  largeEntries = 1; //histarrayADC[subdet]["_sipmLarge"][eta][phi][dep][1]->GetEntries();
                 }
                 if(histarrayADC[subdet]["_sipmSmall"][eta][phi].find(dep) != histarrayADC[subdet]["_sipmSmall"][eta][phi].end()){
-                  smallEntries = histarrayADC[subdet]["_sipmSmall"][eta][phi][dep]->GetEntries();
+                  smallEntries = 1; //histarrayADC[subdet]["_sipmSmall"][eta][phi][dep][1]->GetEntries();
                 }
                 if ((smallEntries > 0) and (largeEntries == 0)){
-                  ZS = ceil(histarrayADC[subdet]["_sipmSmall"][eta][phi][dep]->GetMean() + XtimesRMS*histarrayADC[subdet]["_sipmSmall"][eta][phi][dep]->GetRMS() + RMSplusY);
+                  ZS = ceil(histarrayADCfull[subdet]["_sipmSmall"][eta][phi][dep].first + XtimesRMS*histarrayADCfull[subdet]["_sipmSmall"][eta][phi][dep].second + RMSplusY);
                 }else if ((smallEntries == 0) and (largeEntries > 0)){
-                  ZS = ceil(histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + XtimesRMS*histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS() + RMSplusY);
+                  ZS = ceil(histarrayADCfull[subdet]["_sipmLarge"][eta][phi][dep].first + XtimesRMS*histarrayADCfull[subdet]["_sipmLarge"][eta][phi][dep].second + RMSplusY);
                 }else if ((smallEntries == 0) and (largeEntries == 0)){
                   cout << "WARNING! NONE! " << smallEntries << "/" << largeEntries << ": " << eta << " " << phi << " " << dep << endl;
                   ZS = 255; // Shouldn't happen. Set safety value anyway
                 }else if ((smallEntries > 0) and (largeEntries > 0)){
                   cout << "WARNING! BOTH! " << smallEntries << "/" << largeEntries << ": " << eta << " " << phi << " " << dep << endl;
-                  ZS = ceil(histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + XtimesRMS*histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS() + RMSplusY); // Shouldn't happen. Use large value just in case
+                  ZS = ceil(histarrayADCfull[subdet]["_sipmLarge"][eta][phi][dep].first + XtimesRMS*histarrayADCfull[subdet]["_sipmLarge"][eta][phi][dep].second + RMSplusY); // Shouldn't happen. Use large value just in case
                 }
               }else{
                 offset = RMSplusY;
                 if(crate==25 and ((slot==4 and (fiber==2 || fiber==6 || fiber==10 || fiber==14 || fiber==18 || fiber==22)) || (slot==5 and (fiber==6 || fiber==7)))) offset = offset - LessForHBM09RM3; // Lower threshold for HBM09 RM3
                 // ZS as above, but derived by FC, and then translated into ADC
                 if(histarrayFC[subdet]["_sipmLarge"][eta][phi].find(dep) != histarrayFC[subdet]["_sipmLarge"][eta][phi].end()){
-                  largeEntries = histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetEntries();
+                  largeEntries = 1; //histarrayFC[subdet]["_sipmLarge"][eta][phi][dep][1]->GetEntries();
                 }
                 if(histarrayFC[subdet]["_sipmSmall"][eta][phi].find(dep) != histarrayFC[subdet]["_sipmSmall"][eta][phi].end()){
-                  smallEntries = histarrayFC[subdet]["_sipmSmall"][eta][phi][dep]->GetEntries();
+                  smallEntries = 1; //histarrayFC[subdet]["_sipmSmall"][eta][phi][dep][1]->GetEntries();
                 }
                 if ((smallEntries > 0) and (largeEntries == 0)){
-                  float fc = histarrayFC[subdet]["_sipmSmall"][eta][phi][dep]->GetMean() + XtimesRMS*histarrayFC[subdet]["_sipmSmall"][eta][phi][dep]->GetRMS();
+                  float fc = histarrayFCfull[subdet]["_sipmSmall"][eta][phi][dep].first + XtimesRMS*histarrayFCfull[subdet]["_sipmSmall"][eta][phi][dep].second;
                   ZS = ceil(fc2adc->Eval(fc) + offset);
                 }else if ((smallEntries == 0) and (largeEntries > 0)){
-                  float fc = histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + XtimesRMS*histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS();
+                  float fc = histarrayFCfull[subdet]["_sipmLarge"][eta][phi][dep].first + XtimesRMS*histarrayFCfull[subdet]["_sipmLarge"][eta][phi][dep].second;
                   ZS = ceil(fc2adc->Eval(fc) + offset);
                   if(eta==-9 and phi==32 and dep==4){
-                    cout << "FC Mean: " << histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() << endl;
-                    cout << "FC RMS: " << histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS() << endl;
-                    cout << "ADC Mean: " << histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() << endl;
-                    cout << "ADC RMS: " << histarrayADC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS() << endl;
+                    cout << "FC Mean: " << histarrayFCfull[subdet]["_sipmLarge"][eta][phi][dep].first << endl;
+                    cout << "FC RMS: " << histarrayFCfull[subdet]["_sipmLarge"][eta][phi][dep].second << endl;
+                    cout << "ADC Mean: " << histarrayADCfull[subdet]["_sipmLarge"][eta][phi][dep].first << endl;
+                    cout << "ADC RMS: " << histarrayADCfull[subdet]["_sipmLarge"][eta][phi][dep].second << endl;
                     cout << "ADC val of FC = " << fc << " is " << fc2adc->Eval(fc) << endl;
-                    cout << "ADC val of FC = " << histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + (XtimesRMS-1.0)*histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS() << " is " << fc2adc->Eval(histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + (XtimesRMS-1.0)*histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS()) << endl;
+                    cout << "ADC val of FC = " << histarrayFCfull[subdet]["_sipmLarge"][eta][phi][dep].first + (XtimesRMS-1.0)*histarrayFCfull[subdet]["_sipmLarge"][eta][phi][dep].second << " is " << fc2adc->Eval(histarrayFCfull[subdet]["_sipmLarge"][eta][phi][dep].first + (XtimesRMS-1.0)*histarrayFCfull[subdet]["_sipmLarge"][eta][phi][dep].second) << endl;
                   }
                 }else if ((smallEntries == 0) and (largeEntries == 0)){
                   cout << "WARNING! NONE! " << smallEntries << "/" << largeEntries << ": " << eta << " " << phi << " " << dep << " " << crate << " " << slot << " " << fiber << " " << channel << endl;
                   ZS = 255; // Shouldn't happen. Set safety value anyway
                 }else if ((smallEntries > 0) and (largeEntries > 0)){
                   cout << "WARNING! BOTH! " << smallEntries << "/" << largeEntries << ": " << eta << " " << phi << " " << dep << endl;
-                  float fc = histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetMean() + XtimesRMS*histarrayFC[subdet]["_sipmLarge"][eta][phi][dep]->GetRMS();
+                  float fc = histarrayFCfull[subdet]["_sipmLarge"][eta][phi][dep].first + XtimesRMS*histarrayFCfull[subdet]["_sipmLarge"][eta][phi][dep].second;
                   ZS = ceil(fc2adc->Eval(fc) + offset); // Shouldn't happen. Use large value just in case
                 }
               }
@@ -851,7 +996,7 @@ int main(int argc, char *argv[])
   xmlfile.close();
   ////
 
-  } // end if(!WholeRun)
+  //} // end if(!WholeRun)
 
   cout << "Saving results..." << endl;
 
@@ -862,8 +1007,11 @@ int main(int argc, char *argv[])
       for (auto const& eta : histarrayFC[subdet][siz.first]){
         for (auto const& phi : histarrayFC[subdet][siz.first][eta.first]){
           for (auto const& dep : histarrayFC[subdet][siz.first][eta.first][phi.first]){
-            histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first]->Write(); // dep.second->Write()
-            histarrayADC[subdet][siz.first][eta.first][phi.first][dep.first]->Write();
+            if (histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first].count((Nentry/2)+1)){
+              //cout << subdet << ", " << siz.first << ", " << eta.first << ", " << phi.first << ", " << dep.first << ", " << (Nentry/2)+1 << " -> " << histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first][(Nentry/2)+1]->GetEntries() << endl;
+              histarrayFC[subdet][siz.first][eta.first][phi.first][dep.first][(Nentry/2)+1]->Write();
+              histarrayADC[subdet][siz.first][eta.first][phi.first][dep.first][(Nentry/2)+1]->Write();
+            }
           }
         }
       }

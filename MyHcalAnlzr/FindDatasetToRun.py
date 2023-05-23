@@ -2,18 +2,37 @@ import os, sys
 import glob
 import time
 import json
+import ROOT
 
 date = sys.argv[1]
 day = str(int(date.split(".")[0]))
 month = str(int(date.split(".")[1]))
-whitelistrun = sys.argv[2] if len(sys.argv)>2 else ""
-WholeRun = True if len(sys.argv)>3 and sys.argv[3]=="WholeRun" else False # Will only work for a given run!
+if len(sys.argv)>2:
+  if " " in sys.argv[2]:
+    whitelistrun = sys.argv[2].split(" ")
+  else:
+    whitelistrun = [sys.argv[2]]
+else:
+  whitelistrun = []
+
+if len(sys.argv)>3: # Will only work for a given run!
+  if sys.argv[3]=="WholeRun":
+    WholeRun = True
+    WholeFill = False
+  else:
+    WholeRun = False
+    WholeFill = sys.argv[3]
+else:
+  WholeRun = False
+  WholeFill = False
 
 #path = "/eos/cms/tier0/store/data/Commissioning2023/TestEnablesEcalHcal/*/*/*"
 #path = "/eos/cms/tier0/store/data/Run2023A/TestEnablesEcalHcal/*/*/*"  # 06.04.-20.04.
-path = "/eos/cms/tier0/store/data/Run2023B/TestEnablesEcalHcal/*/*/*"
+#path = "/eos/cms/tier0/store/data/Run2023B/TestEnablesEcalHcal/*/*/*"  # 21.04.-05.05.
+path = "/eos/cms/tier0/store/data/Run2023C/TestEnablesEcalHcal/*/*/*"
 
-blacklist_file = ["244aa98d-1bc6-4c3f-bf02-36032473b104.root"]
+blacklist_file = ["244aa98d-1bc6-4c3f-bf02-36032473b104.root"] # Ignore this file, it led to weird results
+whitelist_file = ["3c982479-12d1-407c-8399-67b38c82f709.root"] # Use this file, to get ZS threshold at certain inst. lumi.
 
 allfiles_list = [f for f in glob.glob(path+"/*/*/*/*") if f.endswith(".root") and f.split("/")[-1] not in blacklist_file]
 print("There are",len(allfiles_list),"files total")
@@ -62,9 +81,9 @@ for run in allruns_date[day+"."+month]:
     pureRuns.append(run)
 
 #Consider using mixed runs only when there are no pure runs
-if whitelistrun in pureRuns or whitelistrun in mixedRuns:
+if any(w in pureRuns for w in whitelistrun) or any(w in mixedRuns for w in whitelistrun):
   print("Using given run")
-  runs = [whitelistrun]
+  runs = [w for w in whitelistrun if w in pureRuns or w in mixedRuns]
 elif pureRuns!=[]:
   print("Using run from given day")
   runs = pureRuns
@@ -85,16 +104,17 @@ for run in runs:
   files += [f for f in glob.glob(path+"/"+runstr+"/*/*") if f.endswith(".root")]
 
 myfile = ""
-#newselectionmethod = True
-#if newselectionmethod:
-# Get all large files, sort by time, then process the median file
-largefiles = {}
-for f in files:
-  fs = os.path.getsize(f)
-  if fs > 3758096384: # 3.5G
-    largefiles[os.path.getmtime(f)] = f
-if largefiles != {}:
-  myfile = largefiles[ sorted(list(largefiles.keys()))[int(len(largefiles)/2.0)] ]
+if any([fstr in f for fstr in whitelist_file for f in files]) and not (WholeRun or WholeFill): 
+  myfile = [f for fstr in whitelist_file for f in files if fstr in f][0]
+else:
+  # Get all large files, sort by time, then process the median file
+  largefiles = {}
+  for f in files:
+    fs = os.path.getsize(f)
+    if fs > 3758096384: # 3.5G
+      largefiles[os.path.getmtime(f)] = f
+  if largefiles != {}:
+    myfile = largefiles[ sorted(list(largefiles.keys()))[int(len(largefiles)/2.0)] ]
 #else:
 #  # Process the largest file
 #  size = 0
@@ -112,14 +132,14 @@ else:
 run = myfile.split("/")[11]+myfile.split("/")[12]
 
 # Run
-if not WholeRun:
+if not (WholeRun or WholeFill):
   os.system("cp HcalNano_Template.sh HcalNano_"+run+".sh")
   filein = myfile.replace("/eos/cms/tier0", "").replace("/", "\/")
   os.system('sed -i "s/FILEIN/'+filein+'/g" HcalNano_'+run+'.sh')
   os.system('sed -i "s/XXXXXX/'+run+'/g" HcalNano_'+run+'.sh')
   os.system('sed -i "s/DAY/'+date+'/g" HcalNano_'+run+'.sh')
   os.system('. ./HcalNano_'+run+'.sh') # "source" somehow doesn't work here, but it works when you just replace it with "."
-else:
+elif WholeRun:
   files = [largefiles[f] for f in largefiles]
   os.system("mkdir WholeRunOutput_"+run)
   for myfile in files:
@@ -134,6 +154,37 @@ else:
     os.system('./macro_nano '+fname+' 1')
     os.system('python3 digi_process.py '+run+' WholeRun '+fname)
     os.system('mv *'+fname+'* WholeRunOutput_'+run)
+else: # WholeFill
+  files = [largefiles[f] for f in largefiles]
+  tohadd = []
+  nentries = []
+  for myfile in files:
+    fname = myfile.split("/")[-1].split(".")[0]
+    os.system("cp HcalNano_Template.sh HcalNano_"+run+"_"+fname+".sh")
+    filein = myfile.replace("/eos/cms/tier0", "").replace("/", "\/")
+    os.system('sed -i "s/FILEIN/'+filein+'/g" HcalNano_'+run+'_'+fname+'.sh')
+    os.system('sed -i "s/XXXXXX/'+run+'_'+fname+'/g" HcalNano_'+run+'_'+fname+'.sh')
+    os.system('sed -i "s/_DAY//g" HcalNano_'+run+'_'+fname+'.sh')
+    os.system('sed -i "s/-n 5000/-n 500/g" HcalNano_'+run+"_"+fname+'.sh')
+    #os.system('. ./HcalNano_'+run+'_'+fname+'.sh')
+    #os.system('rooteventselector -s "(uMNio_EventType == 1)" -e "HLT_*" /eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/output_CalibRuns_Nano_Run'+run+'_'+fname+'.root:Events /eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/output_CalibRuns_Nano_Run'+run+'_'+fname+'_temp2.root')
+    #os.system('python3 haddnano.py /eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/output_CalibRuns_Nano_Run'+run+'_'+fname+'_temp.root /eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/output_CalibRuns_Nano_Run'+run+'_'+fname+'_temp2.root')
+    #os.system('rm /eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/output_CalibRuns_Nano_Run'+run+'_'+fname+'_temp2.root')
+    tohadd.append('/eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/output_CalibRuns_Nano_Run'+run+'_'+fname+'_temp.root')
+    fin = ROOT.TFile.Open(tohadd[-1], "READ")
+    tree = fin.Get("Events")
+    nentries.append(str(tree.GetEntries()))
+    fin.Close()
+    ###os.system('./macro_nano '+fname+' 1')
+    ###os.system('python3 digi_process.py '+run+' WholeRun '+fname)
+    os.system('mv *'+fname+'* WholeFillOutput_'+WholeFill)
+  #os.system('python3 haddnano.py /eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/output_CalibRuns_Nano_Fill'+WholeFill+'_'+date+'.root '+' '.join(tohadd))
+  #for myfile in tohadd:
+  #  os.system('rm '+myfile)
+  ##os.system('./macro_nano '+date+' '+WholeFill+' '+str(len(tohadd)))
+  print('./macro_nano '+date+' '+WholeFill+' '+' '.join(nentries))
+  os.system('./macro_nano '+date+' '+WholeFill+' '+' '.join(nentries))
+  os.system('mv *Fill'+WholeFill+'* WholeFillOutput_'+WholeFill)
 
 print("Done making NanoTuple!")
 exit()

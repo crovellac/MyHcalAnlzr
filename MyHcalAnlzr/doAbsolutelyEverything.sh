@@ -1,6 +1,6 @@
 # Daysince, Lumi, Floatday, Run (optional)
 
-# Luminosities ideally taken at ~12:00 of each day, otherwise close to a corresponding run
+# Luminosities taken close to the middle of a corresponding run, otherwise at ~12:00 of each day
 # --- Start Run2023A (First beams)
 #source doEverything.sh 0 0.0 06.04
 #source doEverything.sh 1 0.0 07.04
@@ -31,4 +31,22 @@
 #source doEverything.sh 25 0.383 01.05 366873
 #source doEverything.sh 26 0.696 02.05 366895
 #source doEverything.sh 27 0.873 03.05 366933
-source doEverything.sh 28 0.985 04.05
+#source doEverything.sh 28 0.985 04.05
+#source doEverything.sh 29 1.012 05.05 367064
+# --- End Run2023B , Start Run2023C (First 1200b beams)
+#source doEverything.sh 30 1.292 06.05 367095
+#source doEverything.sh 31 1.790 07.05 367112
+#source doEverything.sh 32 2.172 08.05 367133
+#source doEverything.sh 33 2.487 09.05 367232
+#source doEverything.sh 34 3.389 10.05 367270
+#source doEverything.sh 35 4.124 11.05 367337
+#source doEverything.sh 36 4.383 12.05 367406
+#source doEverything.sh 37 4.921 13.05 367415
+#source doEverything.sh 38 5.169 14.05 367475 # Used to update ZS configs
+#source doEverything.sh 39 5.739 15.05 367515
+#source doEverything.sh 40 6.579 16.05 367554
+#source doEverything.sh 41 6.914 17.05 367618
+#source doEverything.sh 42 7.784 18.05 367696
+source doEverything.sh 43 8.163 19.05 367730
+source doEverything.sh 44 8.380 20.05 367742
+source doEverything.sh 45 8.590 21.05 367758
