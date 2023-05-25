@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
   TNtuple* qiedigi = (TNtuple*)f->Get("MyHcalAnlzr/qiedigi");
   int ntot = qiedigi->GetEntries();
   std::cout << "Reading in input file, total " << ntot << " Entries." << std::endl;
-  float RunNum, LumiNum, EvtNum, ieta, iphi, depth, sumADC, type, shunt;
+  float RunNum, LumiNum, EvtNum, ieta, iphi, depth, sumADC, sumFC, type, shunt;
   qiedigi->SetBranchAddress("RunNum", &RunNum);
   qiedigi->SetBranchAddress("LumiNum", &LumiNum);
   qiedigi->SetBranchAddress("EvtNum", &EvtNum);
@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
   qiedigi->SetBranchAddress("iphi", &iphi);
   qiedigi->SetBranchAddress("depth", &depth);
   qiedigi->SetBranchAddress("sumADC", &sumADC);
+  qiedigi->SetBranchAddress("sumFC", &sumFC);
   qiedigi->SetBranchAddress("type", &type);
   qiedigi->SetBranchAddress("shunt", &shunt);
 
@@ -55,24 +56,31 @@ int main(int argc, char *argv[])
 
   string det;
   string size;
-  TH1F ***** histarray;
-  histarray = new TH1F****[3];
-  for(int t=0; t<3; t++){ // 0=Small SiPM, 1=Large SiPM, 2=HF&HO
-    histarray[t] = new TH1F***[82];
-    if (t==0) size = "_sipmSmall";
-    else if (t==1) size = "_sipmLarge";
-    else size = "";
-    for(int i=0; i<82; i++){ // Number of ieta bins -41..41, excluding 0
-      histarray[t][i] = new TH1F**[72];
-      for(int j=0; j<72; j++){ // Number of iphi bins 1..72
-        histarray[t][i][j] = new TH1F*[7];
-        for(int k=0; k<7; k++){ // Number of depths 1..7
-          if (t==2 && (i<13 || i>68)) det = "HF";
-          else if (t==2 && (i>25 && i<56)) det = "HO";
-          else if (t<2 && ((i>=26 && i<=55) || (i==25 && k<3) || (i==56 && k<3))) det = "HB";
-          else if (t<2 && ((i>=12 && i<=24) || (i>=57 && i<=69) || (i==25 && k>=3) || (i==56 && k>=3))) det = "HE";
-          else det = "";
-          histarray[t][i][j][k] = new TH1F(("hist_run"+runid+"_subdet"+det+size+"_ieta"+to_string(i<=41?i-41:i-40)+"_iphi"+to_string(j+1)+"_depth"+to_string(k+1)).c_str(), "Pedestal per Channel; ADC; Entries", 1600, 0, 40);
+  TH1F ****** histarray;
+  histarray = new TH1F*****[2];
+  for(int u=0; u<2; u++){ // 0=ADC, 1=FC
+    histarray[u] = new TH1F****[3];
+    for(int t=0; t<3; t++){ // 0=Small SiPM, 1=Large SiPM, 2=HF&HO
+      histarray[u][t] = new TH1F***[82];
+      if (t==0) size = "_sipmSmall";
+      else if (t==1) size = "_sipmLarge";
+      else size = "";
+      for(int i=0; i<82; i++){ // Number of ieta bins -41..41, excluding 0
+        histarray[u][t][i] = new TH1F**[72];
+        for(int j=0; j<72; j++){ // Number of iphi bins 1..72
+          histarray[u][t][i][j] = new TH1F*[7];
+          for(int k=0; k<7; k++){ // Number of depths 1..7
+            if (t==2 && (i<13 || i>68)) det = "HF";
+            else if (t==2 && (i>25 && i<56)) det = "HO";
+            else if (t<2 && ((i>=26 && i<=55) || (i==25 && k<3) || (i==56 && k<3))) det = "HB";
+            else if (t<2 && ((i>=12 && i<=24) || (i>=57 && i<=69) || (i==25 && k>=3) || (i==56 && k>=3))) det = "HE";
+            else det = "";
+            if (u==0){
+              histarray[u][t][i][j][k] = new TH1F(("hist_run"+runid+"_subdet"+det+size+"_ieta"+to_string(i<=41?i-41:i-40)+"_iphi"+to_string(j+1)+"_depth"+to_string(k+1)+"_ADC").c_str(), "Pedestal per Channel; ADC; Entries", 960, 0, 32);
+            }else{
+              histarray[u][t][i][j][k] = new TH1F(("hist_run"+runid+"_subdet"+det+size+"_ieta"+to_string(i<=41?i-41:i-40)+"_iphi"+to_string(j+1)+"_depth"+to_string(k+1)+"_FC").c_str(), "Pedestal per Channel; FC; Entries", 10000, 0, 1000);
+            }
+          }
         }
       }
     }
@@ -97,11 +105,14 @@ int main(int argc, char *argv[])
     //std::cout << sipmidx << ", " << ietaidx << ", " << iphiidx << ", " << depthidx << std::endl;
 
     if (type==3 || type==4 || type==5 || type==6){
-      histarray[sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/8.0); // Average ADC of all 8 TSs, HBHE
+      histarray[0][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/8.0); // Average ADC of all 8 TSs, HBHE
+      histarray[1][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumFC/8.0);
     }else if (!(ietaidx>=26 && ietaidx<=55)){
-      histarray[sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/6.0); // Average ADC of all 6 TSs, HF
+      histarray[0][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/6.0); // Average ADC of all 6 TSs, HF
+      histarray[1][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumFC/6.0);
     }else{
-      histarray[sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/10.0); // Average ADC of all 10 TSs, HO
+      histarray[0][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumADC/10.0); // Average ADC of all 10 TSs, HO
+      histarray[1][sipmidx][ietaidx][iphiidx][depthidx]->Fill(sumFC/10.0);
     }
 
   }
@@ -110,13 +121,13 @@ int main(int argc, char *argv[])
   std::cout << "Writing table..." << std::endl;
 
   ofstream tablefile;
-  tablefile.open("Table_Run"+runid+"_"+floatday+".2022.txt");
-  tablefile << setw(8) << "SubDet" << setw(8) << "SiPM" << setw(8) << "ieta" << setw(8) << "iphi" << setw(8) << "depth" << setw(12) << "Mean" << setw(12) << "RMS" << "\n";
+  tablefile.open("Table_Run"+runid+"_"+floatday+".2023.txt");
+  tablefile << setw(8) << "SubDet" << setw(8) << "SiPM" << setw(8) << "ieta" << setw(8) << "iphi" << setw(8) << "depth" << setw(12) << "ADC Mean" << setw(12) << "ADC RMS" << setw(12) << "fC Mean" << setw(12) << "fC RMS" << "\n";
   for(int t=0; t<3; t++){ // 0=Small SiPM, 1=Large SiPM, 2=HF&HO
     for(int i=0; i<82; i++){ // Number of ieta bins -41..41, excluding 0
       for(int j=0; j<72; j++){ // Number of iphi bins 1..72
         for(int k=0; k<7; k++){ // Number of depths 1..7
-          if (histarray[t][i][j][k]->GetEntries() > 0){
+          if (histarray[0][t][i][j][k]->GetEntries() > 0){
             det = "";
             if (t==2 && (i<13 || i>68)) det = "HF";
             else if (t==2 && (i>25 && i<56)) det = "HO";
@@ -124,7 +135,7 @@ int main(int argc, char *argv[])
             else if (t<2 && ((i>=12 && i<=24) || (i>=57 && i<=69) || (i==25 && k>=3) || (i==56 && k>=3))) det = "HE";
             if (t==2) size = "";
             else size = t==0?"Small":"Large";
-            tablefile << setw(8) << det << setw(8) << size << setw(8) << (i<41?i-41:i-40) << setw(8) << (j+1) << setw(8) << (k+1) << setw(12) << histarray[t][i][j][k]->GetMean() << setw(12) << histarray[t][i][j][k]->GetRMS() << "\n";
+            tablefile << setw(8) << det << setw(8) << size << setw(8) << (i<41?i-41:i-40) << setw(8) << (j+1) << setw(8) << (k+1) << setw(12) << histarray[0][t][i][j][k]->GetMean() << setw(12) << histarray[0][t][i][j][k]->GetRMS() << setw(12) << histarray[1][t][i][j][k]->GetMean() << setw(12) << histarray[1][t][i][j][k]->GetRMS() << "\n";
           }
         }
       }
@@ -311,12 +322,14 @@ int main(int argc, char *argv[])
 
   ofile->cd();
 
-  for(int t=0; t<3; t++){ // 0=Small SiPM, 1=Large SiPM, 2=HF&HO
-    for(int i=0; i<82; i++){ // Number of ieta bins -41..41, excluding 0
-      for(int j=0; j<72; j++){ // Number of iphi bins 1..72
-        for(int k=0; k<7; k++){ // Number of depths 1..7
-          if (histarray[t][i][j][k]->GetEntries() > 0){
-            histarray[t][i][j][k]->Write();
+  for(int u=0; u<2; u++){ // 0=ADC, 1=FC
+    for(int t=0; t<3; t++){ // 0=Small SiPM, 1=Large SiPM, 2=HF&HO
+      for(int i=0; i<82; i++){ // Number of ieta bins -41..41, excluding 0
+        for(int j=0; j<72; j++){ // Number of iphi bins 1..72
+          for(int k=0; k<7; k++){ // Number of depths 1..7
+            if (histarray[u][t][i][j][k]->GetEntries() > 0){
+              histarray[u][t][i][j][k]->Write();
+            }
           }
         }
       }

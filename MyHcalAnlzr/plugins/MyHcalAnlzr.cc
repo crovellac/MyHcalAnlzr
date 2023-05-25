@@ -138,7 +138,7 @@ MyHcalAnlzr::MyHcalAnlzr(const edm::ParameterSet& iConfig)
   usesResource("TFileService");
   edm::Service<TFileService> fs;
   //tup_rh = fs->make<TNtuple>("rechit", "rechit", "RunNum:LumiNum:EvtNum:Energy:Time:TDC0:TDC1:TDC2:TDC3:TDC4:IEta:IPhi:Depth");
-  tup_qie= fs->make<TNtuple>("qiedigi", "qiedigi", "RunNum:LumiNum:EvtNum:ieta:iphi:depth:sumADC:type:shunt");
+  tup_qie= fs->make<TNtuple>("qiedigi", "qiedigi", "RunNum:LumiNum:EvtNum:ieta:iphi:depth:sumADC:sumFC:type:shunt");
   //tup_ecal=fs->make<TNtuple>("eedigi", "eedigi", "ADC0:ADC1:ADC2:ADC3:ADC4:ADC5:ADC6:ADC7:ADC8:ADC9:e_eerec:ix:iy:iz");
 
   //evttree = fs->make<TTree>("evttree", "evttree");
@@ -272,15 +272,24 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     if(!(did.subdet() == HcalEndcap || did.subdet() == HcalBarrel)) continue;
     int type = conditions->getHcalSiPMParameter(did)->getType();
 
+    const HcalQIECoder *channelCoder = conditions->getHcalCoder(did);
+    const HcalQIEShape *shape = conditions->getHcalShape(channelCoder);
+    HcalCoderDb coder(*channelCoder, *shape);
+    CaloSamples cs;
+    coder.adc2fC(digi, cs);
+    //CaloSamples cs = hcaldqm::utilities::loadADC2fCDB<QIE11DataFrame>(setup, did, *digi);
+
     //const HcalQIECoder* channelCoder = conditions -> getHcalCoder(did);
     //const HcalQIEShape* shape = conditions -> getHcalShape(channelCoder);
     //HcalCoderDb coder(*channelCoder,*shape);
     //CaloSamples cs; coder.adc2fC(digi,cs);
     //HcalCalibrations calibrations = conditions->getHcalCalibrations(did);
 
+    float FC_=0;
     int ADC_=0;
     for(int i=0; i<digi.samples(); i++){
       ADC_ += digi[i].adc();
+      FC_ += cs[i];
     }
 
     /*float sumE = 0.;
@@ -294,7 +303,7 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
       }
     }*/
 
-    float vars[9] = {(float) runid, (float) lumiid, (float) eventid, (float) did.ieta(), (float) did.iphi(), (float) did.depth(), (float) ADC_, (float) type, shunt};
+    float vars[10] = {(float) runid, (float) lumiid, (float) eventid, (float) did.ieta(), (float) did.iphi(), (float) did.depth(), (float) ADC_, (float) FC_, (float) type, shunt};
 
     tup_qie->Fill(vars);
 
@@ -313,20 +322,27 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   //qie10list.clear();
   for (QIE10DigiCollection::const_iterator it = qie10Digis->begin(); it != qie10Digis->end(); ++it) {
     const QIE10DataFrame digi10 = static_cast<const QIE10DataFrame>(*it);
-    
 
     //  Explicit check on the DetIds present in the Collection
     HcalDetId const& did10 = digi10.detid();
     if(!(did10.subdet() == HcalForward)) continue;
     int type = conditions->getHcalSiPMParameter(did10)->getType();
 
+    const HcalQIECoder *channelCoder = conditions->getHcalCoder(did10);
+    const HcalQIEShape *shape = conditions->getHcalShape(channelCoder);
+    HcalCoderDb coder(*channelCoder, *shape);
+    CaloSamples cs10;
+    coder.adc2fC(digi10, cs10);
+
     int ADC_=0;
+    float FC_=0;
     for(int i=0; i<digi10.samples(); i++){
       ADC_ += digi10[i].adc();
+      FC_ += cs10[i];
     }
 
 
-    float vars10[9] = {(float) runid, (float) lumiid, (float) eventid,(float) did10.ieta(), (float) did10.iphi(), (float) did10.depth(), (float) ADC_, (float) type, shunt};
+    float vars10[10] = {(float) runid, (float) lumiid, (float) eventid,(float) did10.ieta(), (float) did10.iphi(), (float) did10.depth(), (float) ADC_, (float) FC_, (float) type, shunt};
 
     tup_qie->Fill(vars10);
 
@@ -344,7 +360,6 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
   //HOdigilist.clear();
   for (HODigiCollection::const_iterator it = HODigis->begin(); it != HODigis->end(); ++it) {
     const HODataFrame HODigis = static_cast<const HODataFrame>(*it);
-    
 
     //  Explicit check on the DetIds present in the Collection
     //HcalDetId didHO = HODigis.id();
@@ -352,12 +367,20 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     if(!(didHO.subdet() == HcalOuter)) continue;
     int type = conditions->getHcalSiPMParameter(didHO)->getType();
 
+    const HcalQIECoder *channelCoder = conditions->getHcalCoder(didHO);
+    const HcalQIEShape *shape = conditions->getHcalShape(channelCoder);
+    HcalCoderDb coder(*channelCoder, *shape);
+    CaloSamples HOcs;
+    coder.adc2fC(HODigis, HOcs);
+
     int ADC_=0;
+    float FC_=0;
     for(int i=0; i<HODigis.size(); i++){
       ADC_ += HODigis[i].adc();
+      FC_ += HOcs[i];
     }
 
-    float varsHO[9] = {(float) runid, (float) lumiid, (float) eventid,(float) didHO.ieta(), (float) didHO.iphi(), (float) didHO.depth(), (float) ADC_, (float) type, shunt};
+    float varsHO[10] = {(float) runid, (float) lumiid, (float) eventid,(float) didHO.ieta(), (float) didHO.iphi(), (float) didHO.depth(), (float) ADC_, (float) FC_, (float) type, shunt};
 
     tup_qie->Fill(varsHO);
 

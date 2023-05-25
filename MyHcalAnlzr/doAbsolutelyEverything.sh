@@ -15,6 +15,24 @@ source doEverything.sh 366543 366546 19 0.043 25.04
 source doEverything.sh 366614 366615 20 0.043 26.04
 source doEverything.sh 366652 366651 21 0.043 27.04
 source doEverything.sh 366740 366742 22 0.093 28.04
-source doEverything.sh 366805 366808 23 0.138 29.04
-source doEverything.sh 366902 366906 25 0.383 01.05
-
+source doEverything.sh 366805 366808 23 0.160 29.04
+source doEverything.sh 366902 366906 26 0.777 02.05
+source doEverything.sh 366946 366947 27 0.985 03.05
+source doEverything.sh 367084 367083 30 1.236 06.05
+source doEverything.sh 367113 367116 31 1.943 07.05
+source doEverything.sh 367145 367150 32 2.232 08.05
+source doEverything.sh 367235 367240 33 2.772 09.05
+source doEverything.sh 367279 367282 34 3.523 10.05
+source doEverything.sh 367343 367344 35 4.276 11.05
+source doEverything.sh 367457 367459 37 4.936 13.05
+source doEverything.sh 367479 367484 38 5.561 14.05
+source doEverything.sh 367536 367532 39 6.210 15.05
+source doEverything.sh 367562 367561 40 6.600 16.05
+source doEverything.sh 367676 367675 42 7.362 18.05
+source doEverything.sh 367733 367735 43 8.264 19.05
+source doEverything.sh 367748 367749 44 8.419 20.05
+source doEverything.sh 367761 367762 45 8.682 21.05
+source doEverything.sh 367817 367818 46 8.835 22.05
+source doEverything.sh 367861 367863 47 9.734 23.05
+source doEverything.sh 367888 367887 48 10.562 24.05
+source doEverything.sh 367914 367916 49 11.249 25.05
