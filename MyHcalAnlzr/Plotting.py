@@ -346,7 +346,7 @@ else:
         allruns.append(run)
   allruns.sort()
   ## Select only 4 runs: First, middle, last
-  if False:
+  if True:
     runs = [allruns[0]]
     if len(allruns)>3:
       runs.append(allruns[int(len(allruns)/3)])
@@ -355,10 +355,10 @@ else:
       runs.append(allruns[int(len(allruns)/2)])
     if len(allruns)>1: runs.append(allruns[-1])
   ## Or do all runs
-  if False:
+  elif False:
     runs = allruns
   ## Or do most recent ones:
-  if True:
+  elif True:
     step = 1
     runs = [allruns[-1]]
     runs.append(allruns[-1-step])
@@ -385,7 +385,6 @@ for unit in ["ADC", "FC"]:
       h[unit+subdet][size][alpha] = {}
       for run in runs:
         h[unit+subdet][size][alpha][run] = fin.Get(subdet+"_sipm"+size+"_ped"+unit+alpha+"_run"+run)
-        print(subdet+"_sipm"+size+"_ped"+unit+alpha+"_run"+run)
         maxval = h[unit+subdet][size][alpha][run].GetMaximum()
         leftbin = h[unit+subdet][size][alpha][run].GetBinCenter(h[unit+subdet][size][alpha][run].FindFirstBinAbove(0))
         rightbin = h[unit+subdet][size][alpha][run].GetBinCenter(h[unit+subdet][size][alpha][run].FindLastBinAbove(0))
@@ -395,13 +394,15 @@ for unit in ["ADC", "FC"]:
   for size in sizes: 
     for alpha in ["Mean", "RMS"]:
       if unit=="ADC":
-        rebin = int((maxlimit[alpha+subdet+unit][2]-maxlimit[alpha+subdet+unit][1])*30/50) # Default 30 bin per ADC count. Rebin to ~50 total
+        rebin = int((maxlimit[alpha+subdet+unit][2]-maxlimit[alpha+subdet+unit][1])*30/50+0.5) # Default 30 bin per ADC count. Rebin to ~50 total
       else:
-        rebin = int((maxlimit[alpha+subdet+unit][2]-maxlimit[alpha+subdet+unit][1])*10/50) # Default 10 bin per 1 fC. Rebin to ~50 total
+        rebin = int((maxlimit[alpha+subdet+unit][2]-maxlimit[alpha+subdet+unit][1])*10/50+0.5) # Default 10 bin per 1 fC. Rebin to ~50 total
       if rebin > 1:
-        if size==sizes[0]: maxlimit[alpha+subdet+unit][0] = maxlimit[alpha+subdet+unit][0] * rebin
+        if size==sizes[0]: maxlimit[alpha+subdet+unit][0] = 0 #maxlimit[alpha+subdet+unit][0] * rebin
         for run in runs:
           h[unit+subdet][size][alpha][run].Rebin(rebin)
+          maxval = h[unit+subdet][size][alpha][run].GetMaximum()
+          if maxlimit[alpha+subdet+unit][0] < maxval: maxlimit[alpha+subdet+unit][0] = maxval
       h[unit+subdet][size][alpha][runs[-1]].GetXaxis().SetRangeUser(maxlimit[alpha+subdet+unit][1], maxlimit[alpha+subdet+unit][2])
       h[unit+subdet][size][alpha][runs[-1]].GetYaxis().SetRangeUser(0, maxlimit[alpha+subdet+unit][0]*1.3)
 
@@ -422,13 +423,15 @@ for unit in ["ADC", "FC"]:
   for depth in depths:
     for alpha in ["Mean", "RMS"]:
       if unit=="ADC":
-        rebin = int((maxlimit["depth"+alpha+subdet+unit][2]-maxlimit["depth"+alpha+subdet+unit][1])*30/50)
+        rebin = int((maxlimit["depth"+alpha+subdet+unit][2]-maxlimit["depth"+alpha+subdet+unit][1])*30/50+0.5)
       else:
-        rebin = int((maxlimit["depth"+alpha+subdet+unit][2]-maxlimit["depth"+alpha+subdet+unit][1])*10/50)
+        rebin = int((maxlimit["depth"+alpha+subdet+unit][2]-maxlimit["depth"+alpha+subdet+unit][1])*10/50+0.5)
       if rebin > 1:
-        if depth==depths[0]: maxlimit["depth"+alpha+subdet+unit][0] = maxlimit["depth"+alpha+subdet+unit][0] * rebin
+        if depth==depths[0]: maxlimit["depth"+alpha+subdet+unit][0] = 0 #maxlimit["depth"+alpha+subdet+unit][0] * rebin
         for run in runs:
           hdepth[unit+subdet][depth][alpha][run].Rebin(rebin)
+          maxval = hdepth[unit+subdet][depth][alpha][run].GetMaximum()
+          if maxlimit["depth"+alpha+subdet+unit][0] < maxval: maxlimit["depth"+alpha+subdet+unit][0] = maxval
       hdepth[unit+subdet][depth][alpha][runs[-1]].GetXaxis().SetRangeUser(maxlimit["depth"+alpha+subdet+unit][1], maxlimit["depth"+alpha+subdet+unit][2])
       hdepth[unit+subdet][depth][alpha][runs[-1]].GetYaxis().SetRangeUser(0, maxlimit["depth"+alpha+subdet+unit][0]*1.3)
 
@@ -437,13 +440,14 @@ for unit in ["ADC", "FC"]:
     for phi in [",36,37", ",18,19"]: # horizonal and vertical
       hphi[unit+subdet][size][phi] = {}
       for alpha in ["Mean", "RMS"]:
-        if "phi"+alpha+subdet not in maxlimit: maxlimit["phi"+alpha+subdet+unit] = [0, 999, 0]
+        if "phi"+alpha+subdet+unit not in maxlimit: maxlimit["phi"+alpha+subdet+unit] = [0, 999, 0]
         hphi[unit+subdet][size][phi][alpha] = {}
         for run in runs:
           hphi[unit+subdet][size][phi][alpha][run] = fin.Get(subdet+"_sipm"+size+"_phi"+phi+"_ped"+unit+alpha+"_run"+run)
           maxval = hphi[unit+subdet][size][phi][alpha][run].GetMaximum()
           leftbin = hphi[unit+subdet][size][phi][alpha][run].GetBinCenter(hphi[unit+subdet][size][phi][alpha][run].FindFirstBinAbove(0))
           rightbin = hphi[unit+subdet][size][phi][alpha][run].GetBinCenter(hphi[unit+subdet][size][phi][alpha][run].FindLastBinAbove(0))
+          #print(subdet+"_sipm"+size+"_phi"+phi+"_ped"+unit+alpha,":",maxval,",",leftbin,",",rightbin)
           if maxlimit["phi"+alpha+subdet+unit][0] < maxval: maxlimit["phi"+alpha+subdet+unit][0] = maxval
           if maxlimit["phi"+alpha+subdet+unit][1] > leftbin: maxlimit["phi"+alpha+subdet+unit][1] = leftbin
           if maxlimit["phi"+alpha+subdet+unit][2] < rightbin: maxlimit["phi"+alpha+subdet+unit][2] = rightbin
@@ -451,13 +455,15 @@ for unit in ["ADC", "FC"]:
     for phi in [",36,37", ",18,19"]:
       for alpha in ["Mean", "RMS"]:
         if unit=="ADC":
-          rebin = int((maxlimit["phi"+alpha+subdet+unit][2]-maxlimit["phi"+alpha+subdet+unit][1])*30/50)
+          rebin = int((maxlimit["phi"+alpha+subdet+unit][2]-maxlimit["phi"+alpha+subdet+unit][1])*30/50+0.5)
         else:
-          rebin = int((maxlimit["phi"+alpha+subdet+unit][2]-maxlimit["phi"+alpha+subdet+unit][1])*10/50)
+          rebin = int((maxlimit["phi"+alpha+subdet+unit][2]-maxlimit["phi"+alpha+subdet+unit][1])*10/50+0.5)
         if rebin > 1:
-          if size==sizes[0] and phi==",36,37": maxlimit["phi"+alpha+subdet+unit][0] = maxlimit["phi"+alpha+subdet+unit][0] * rebin
+          if size==sizes[0] and phi==",36,37": maxlimit["phi"+alpha+subdet+unit][0] = 0 #maxlimit["phi"+alpha+subdet+unit][0] * rebin
           for run in runs:
             hphi[unit+subdet][size][phi][alpha][run].Rebin(rebin)
+            maxval = hphi[unit+subdet][size][phi][alpha][run].GetMaximum()
+            if maxlimit["phi"+alpha+subdet+unit][0] < maxval: maxlimit["phi"+alpha+subdet+unit][0] = maxval
         hphi[unit+subdet][size][phi][alpha][runs[-1]].GetXaxis().SetRangeUser(maxlimit["phi"+alpha+subdet+unit][1], maxlimit["phi"+alpha+subdet+unit][2])
         hphi[unit+subdet][size][phi][alpha][runs[-1]].GetYaxis().SetRangeUser(0, maxlimit["phi"+alpha+subdet+unit][0]*1.3)
 

@@ -33,8 +33,8 @@ int main(int argc, char *argv[])
   string floatday = argv[1]; // String, e.g. "22.02"
   bool WholeRun = false;
   if(argc>1) WholeRun = argv[2]; // When doing a whole run, floatday will actually be the input filename. LS shall be added to output name
-  float XtimesRMS = 3.5; // Set new ZS thresholds to "Mean + X * RMS + Y"
-  string StrXtimesRMS = "3.5"; // Same as above, as string (to_string doesn't work because there's trailing zeros)
+  float XtimesRMS = 3.0; // Set new ZS thresholds to "Mean + X * RMS + Y"
+  string StrXtimesRMS = "3"; // Same as above, as string (to_string doesn't work because there's trailing zeros)
   float RMSplusY = 0.0; // Set new ZS thresholds to "Mean + X * RMS + Y"
   float LessForHBM09RM3 = 0.0;
   int ZSminimum = 6; // Define minimum ZS, specifically for HBP14 RM1
@@ -552,7 +552,7 @@ int main(int argc, char *argv[])
       for (auto const& phi : CheckMissing[subdet][eta.first]){
         for (auto const& dep : CheckMissing[subdet][eta.first][phi.first]){
           if(CheckMissing[subdet][eta.first][phi.first][dep.first]!=0){
-            cout << "Interpolating: det=" << subdet << ", eta=" << eta.first << ", phi=" << phi.first << ", depth=" << dep.first << endl;
+            //cout << "Interpolating: det=" << subdet << ", eta=" << eta.first << ", phi=" << phi.first << ", depth=" << dep.first << endl;
             DPGfile << setw(17) << dec << eta.first << setw(16) << phi.first << setw(16) << dep.first << setw(16) << subdet;
             DPGfileWidth << setw(17) << dec << eta.first << setw(16) << phi.first << setw(16) << dep.first << setw(16) << subdet;
             for (int capid=0; capid<4; capid++) {
