@@ -447,7 +447,6 @@ for unit in ["ADC", "FC"]:
           maxval = hphi[unit+subdet][size][phi][alpha][run].GetMaximum()
           leftbin = hphi[unit+subdet][size][phi][alpha][run].GetBinCenter(hphi[unit+subdet][size][phi][alpha][run].FindFirstBinAbove(0))
           rightbin = hphi[unit+subdet][size][phi][alpha][run].GetBinCenter(hphi[unit+subdet][size][phi][alpha][run].FindLastBinAbove(0))
-          #print(subdet+"_sipm"+size+"_phi"+phi+"_ped"+unit+alpha,":",maxval,",",leftbin,",",rightbin)
           if maxlimit["phi"+alpha+subdet+unit][0] < maxval: maxlimit["phi"+alpha+subdet+unit][0] = maxval
           if maxlimit["phi"+alpha+subdet+unit][1] > leftbin: maxlimit["phi"+alpha+subdet+unit][1] = leftbin
           if maxlimit["phi"+alpha+subdet+unit][2] < rightbin: maxlimit["phi"+alpha+subdet+unit][2] = rightbin
@@ -566,7 +565,7 @@ for unit in ["ADC", "FC"]:
     c[-1].SaveAs(output+"PedestalPerPhi_"+alpha+"_"+subdet+"_"+unit+".pdf")
 
 # Extrapolation plots (makes more sense for lumi)
-if dowhat=="lumi" and False: # Disabled: Need to revisit for 2023
+if dowhat=="lumi" and False: # Disabled: Probably doesn't make sense with how dependent the measurements are on inst. lumi.
   exhists = []
   for trend in ["HB_sipmLarge", "HB_sipmSmall", "HE_sipmLarge", "HE_sipmSmall", "HF", "HO", "HB_sipmLarge_phi,1,72", "HB_sipmLarge_phi,36,37"]:
     exhists.append(None)

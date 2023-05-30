@@ -69,9 +69,9 @@ for p in pedtrend:
       for cut in p.split("_")[1:]:
         if "phi" in cut: # Special phi cuts
           if all("phi"+phicut+"_" not in hname for phicut in cut.split(",")[1:]): skip = True
-        elif "HBP14RM" in cut:
+        elif "HBP14RM1" in cut:
           if not IsHBP14RM1(hname): skip=True
-        elif "HBM09RM" in cut:
+        elif "HBM09RM3" in cut:
           if not IsHBM09RM3(hname): skip=True
         elif cut not in hname: skip = True
         #elif cut!="sipm" and cut not in hname: skip = True # cut!="sipm" -> Temporary, until SiPM sizes are saved. I need to fix naming conventions of saved histograms

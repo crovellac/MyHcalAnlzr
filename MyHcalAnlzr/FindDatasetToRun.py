@@ -11,18 +11,19 @@ WholeRun = True if len(sys.argv)>3 and sys.argv[3]=="WholeRun" else False # Will
 MakeSmallerFiles = True
 
 def MakeSmall(path):
+  patht1 = path.replace(".root", "_temp.root")
+  patht2 = path.replace(".root", "_temp2.root")
   while True:
     # Remove HLT branches and filter non-eventtype 1 events
-    os.system('rooteventselector -s "(uMNio_EventType == 1)" -e "HLT_*" '+path+':Events '+path.replace(".root", "_temp.root"))
+    os.system('rooteventselector -s "(uMNio_EventType == 1)" -e "HLT_*" '+path+':Events '+patht1)
     # Re-compress
-    success = os.system('python3 haddnano.py '+path.replace(".root", "_temp2.root")+' '+path.replace(".root", "_temp.root"))
+    success = os.system('python3 haddnano.py '+patht2+' '+patht1)
+    os.system('rm '+patht1)
     if success==0:
       break
     else:
-      os.system('rm '+path.replace(".root", "_temp.root"))
-      os.system('rm '+path.replace(".root", "_temp2.root"))
-  os.system('mv '+path.replace(".root", "_temp2.root")+' '+path)
-  os.system('rm '+path.replace(".root", "_temp.root"))
+      os.system('rm '+patht2)
+  os.system('mv '+patht2+' '+path)
 
 #path = "/eos/cms/tier0/store/data/Commissioning2023/TestEnablesEcalHcal/*/*/*"
 #path = "/eos/cms/tier0/store/data/Run2023A/TestEnablesEcalHcal/*/*/*"  # 06.04.-20.04.

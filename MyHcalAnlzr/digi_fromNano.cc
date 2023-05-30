@@ -510,7 +510,7 @@ int main(int argc, char *argv[])
               pedsqsum = std::inner_product(CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].begin(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].end(), CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].begin(), 0.0);
               pedstd = sqrt(pedsqsum / CapIDarrayFC[subdet][eta.first][phi.first][dep.first][capid].size() - pedmean * pedmean);
             }else{ // For HF, one CapID is empty: Get average of other entries
-              cout << "Averaging: det=" << subdet << ", eta=" << eta.first << ", phi=" << phi.first << ", depth=" << dep.first << ", capid=" << capid << endl;
+              //cout << "Averaging: det=" << subdet << ", eta=" << eta.first << ", phi=" << phi.first << ", depth=" << dep.first << ", capid=" << capid << endl;
               pedsum = 0.0;
               pedsqsum = 0.0;
               pedsize = 0;
@@ -588,13 +588,38 @@ int main(int argc, char *argv[])
             DPGfileWidth << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << CapIDStd[3]*CapIDStd[3];
             DPGfile << setw(11) << hex << CheckMissing[subdet][eta.first][phi.first][dep.first];
             DPGfile << "\n";
-            DPGfileWidth << setw(11) << hex << rawIDarray[subdet][eta.first][phi.first][dep.first];
+            DPGfileWidth << setw(11) << hex << CheckMissing[subdet][eta.first][phi.first][dep.first];
             DPGfileWidth << "\n";
           }
         }
       }
     }
   }
+
+  // Add ZDC channels
+  vector<int> pm{-1, 1};
+  vector<string> ZDC{"ZDC_EM", "ZDC_HAD", "ZDC_LUM"};
+  for (auto const& eta : pm){
+    for (auto const& subdet : ZDC){
+      for (auto const& phi : CheckMissing[subdet][eta]){
+        for (auto const& dep : CheckMissing[subdet][eta][phi.first]){
+          DPGfile << setw(17) << dec << eta << setw(16) << phi.first << setw(16) << dep.first << setw(16) << subdet;
+          DPGfile << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0;
+          DPGfile << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0;
+          DPGfile << setw(11) << hex << CheckMissing[subdet][eta][phi.first][dep.first];
+          DPGfile << "\n";
+          DPGfileWidth << setw(17) << dec << eta << setw(16) << phi.first << setw(16) << dep.first << setw(16) << subdet;
+          DPGfileWidth << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0;
+          DPGfileWidth << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0;
+          DPGfileWidth << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0;
+          DPGfileWidth << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0 << setw(12) << 0.0;
+          DPGfileWidth << setw(11) << hex << CheckMissing[subdet][eta][phi.first][dep.first];
+          DPGfileWidth << "\n";
+        }
+      }
+    }
+  }
+  
   DPGfile.close();
   DPGfileWidth.close();
 
