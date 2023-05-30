@@ -38,5 +38,6 @@
 #source doEverything.sh 367914 367916 49 11.249 25.05
 #source doEverything.sh 368003 368009 50 11.249 26.05
 #source doEverything.sh 368092 368093 51 11.249 27.05
-source doEverything.sh 368098 368099 52 11.249 28.05
-source doEverything.sh 368102 368104 53 11.249 29.05
+#source doEverything.sh 368098 368099 52 11.249 28.05
+#source doEverything.sh 368102 368104 53 11.249 29.05
+source doEverything.sh 368136 368132 54 11.249 30.05

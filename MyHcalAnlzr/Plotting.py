@@ -9,7 +9,7 @@ import os, sys
 from array import array
 
 # Generally, old measurement have smaller weight
-fittingweight = 0.25 # Smaller values makes weight more equal for all measurements
+fittingweight = 0.10 # Smaller values makes weight more equal for all measurements
 
 def ReadSaveFile():
   with open('SaveFile.txt') as savefile:
@@ -571,9 +571,21 @@ if dowhat=="lumi":
     fit = ROOT.TF1( 'fit', "[0]+[1]*sqrt(x)+[2]*x", exhists[-1].GetPointX(0), maxx)
     #fit = ROOT.TF1( 'fit', "[0]+[1]*x^[2]", exhists[-1].GetPointX(0), maxx)
     #fit.SetParameter(2,1.0)
-    fit.SetParLimits(0,0,999);
-    fit.SetParLimits(1,0,999);
-    fit.SetParLimits(2,0,999);
+    fit.SetParLimits(0,0,999)
+    fit.SetParLimits(1,0,999)
+    fit.SetParLimits(2,0,999)
+    if "HF" in trend or "HO" in trend:
+      fit.SetParameter(0,10.0)
+      fit.SetParameter(1,0.01)
+      fit.SetParameter(2,0.00001)
+    elif unit=="ADC":
+      fit.SetParameter(0,10.0)
+      fit.SetParameter(1,0.1)
+      fit.SetParameter(2,0.1)
+    else:
+      fit.SetParameter(0,100.0)
+      fit.SetParameter(1,1.0)
+      fit.SetParameter(2,1.0)
     exhistserror.Fit("fit", "F")
 
     if "HB" in trend: color = ROOT.kBlue
