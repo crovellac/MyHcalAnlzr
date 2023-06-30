@@ -259,9 +259,16 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 /////////////////////////////////
 // Hcal QIE11Digis
 /////////////////////////////////
-  if (runtype_=="Global" || (runtype_=="Local" && ((eventid > 1000 && eventid < 2000) || (eventid > 4000 && eventid < 5000)))){ // HBHE in combined health check
+
+  // Old combined health check:
+  //if (runtype_=="Global" || (runtype_=="Local" && ((eventid > 1000 && eventid < 2000) || (eventid > 4000 && eventid < 5000)))){ // HBHE in combined health check
+  //if(eventid > 1000 && eventid < 2000) shunt = 6; // HBHE, Gsel1
+  //else if(eventid > 4000 && eventid < 5000) shunt = 1; // HBHE, Gsel0
+
+  // New combined health check:
+  if (runtype_=="Global" || (runtype_=="Local" && ((eventid > 1000 && eventid < 2000) || (eventid > 2000 && eventid < 3000)))){ // HBHE in combined health check ; Ignore shunt 1 events 3000..7000
   if(eventid > 1000 && eventid < 2000) shunt = 6; // HBHE, Gsel1
-  else if(eventid > 4000 && eventid < 5000) shunt = 1; // HBHE, Gsel0
+  else if(eventid > 2000 && eventid < 7000) shunt = 1; // HBHE, Gsel0
   //qieinfo.clear();
   //qielist.clear();
   for (QIE11DigiCollection::const_iterator it = qie11Digis->begin(); it != qie11Digis->end(); ++it) {
@@ -316,7 +323,12 @@ void MyHcalAnlzr::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 /////////////////////////////////
 // Hcal QIE10Digis
 /////////////////////////////////
-  if (runtype_=="Global" || (runtype_=="Local" && (eventid > 6000 && eventid < 11000))){ // HF in combined health check
+
+  // Old combined health check:
+  //if (runtype_=="Global" || (runtype_=="Local" && (eventid > 6000 && eventid < 11000))){ // HF in combined health check
+
+  // New combined health check:
+  if (runtype_=="Global" || (runtype_=="Local" && (eventid > 7000 && eventid < 8000))){ // HF in combined health check
   shunt = 6; // HF, Gsel1
   //qie10info.clear();
   //qie10list.clear();
