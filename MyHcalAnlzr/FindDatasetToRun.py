@@ -23,15 +23,17 @@ def MakeSmall(path):
       break
     else:
       os.system('rm '+patht2)
+  os.system('mv '+path+' '+path.replace(".root", "_FULL.root"))
   os.system('mv '+patht2+' '+path)
 
 #path = "/eos/cms/tier0/store/data/Commissioning2023/TestEnablesEcalHcal/*/*/*"
 #path = "/eos/cms/tier0/store/data/Run2023A/TestEnablesEcalHcal/*/*/*"  # 06.04.-20.04.
 #path = "/eos/cms/tier0/store/data/Run2023B/TestEnablesEcalHcal/*/*/*"  # 21.04.-05.05.
-path = "/eos/cms/tier0/store/data/Run2023C/TestEnablesEcalHcal/*/*/*"
+#path = "/eos/cms/tier0/store/data/Run2023C/TestEnablesEcalHcal/*/*/*"  # 06.05.-29.06.
+path = "/eos/cms/tier0/store/data/Run2023D/TestEnablesEcalHcal/*/*/*"
 
 blacklist_file = ["244aa98d-1bc6-4c3f-bf02-36032473b104.root"]
-whitelist_file = ["0bc49ae3-69bc-439c-8dde-526a71ca1e39.root", "4e32fe18-85ca-4c35-9790-821dd051f4cf.root"] # Use this file, to get ZS threshold at certain inst. lumi.
+whitelist_file = ["0bc49ae3-69bc-439c-8dde-526a71ca1e39.root", "4e32fe18-85ca-4c35-9790-821dd051f4cf.root", "abbda151-86ea-4609-a0ba-820fd14fa9e9.root", "3afeb82e-a911-46c2-bbcb-dc74f90022cd.root", "663ffe17-ddf0-43b5-ba49-24594331baaf.root"] # Use this file, to get ZS threshold at certain inst. lumi.
 
 allfiles_list = [f for f in glob.glob(path+"/*/*/*/*") if f.endswith(".root") and f.split("/")[-1] not in blacklist_file]
 print("There are",len(allfiles_list),"files total")

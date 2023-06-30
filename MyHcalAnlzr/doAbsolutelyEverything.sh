@@ -51,6 +51,38 @@
 #source doEverything.sh 44 8.380 20.05 367742
 #source doEverything.sh 45 8.590 21.05 367758
 #source doEverything.sh 46 8.959 22.05 367831
-#source doEverything.sh 47 9.453 23.05 367838 # Used to update DPG tables (Fill 8817, avg inst. lumi.: 16647 * 10^30 cm^-2 s^-1)
+#source doEverything.sh 47 9.453 23.05 367838 # Used to compare (Fill 8817, avg inst. lumi.: 16647 * 10^30 cm^-2 s^-1)
 #source doEverything.sh 48 10.467 24.05 367884
-source doEverything.sh 49 11.197 25.05 367910
+#source doEverything.sh 49 11.197 25.05 367910
+#source doEverything.sh 53 11.198 29.05 368115 # Cosmics
+#source doEverything.sh 54 11.285 30.05 368223
+#source doEverything.sh 55 11.396 31.05 368229
+#source doEverything.sh 56 11.602 01.06 368321 # Used to compare (Fill 8858, avg inst. lumi.: 10966 * 10^30 cm^-2 s^-1)
+#source doEverything.sh 57 12.138 02.06 368382
+#source doEverything.sh 58 12.444 03.06 368388
+#source doEverything.sh 59 12.944 04.06 368410
+#source doEverything.sh 60 14.188 05.06 368489
+#source doEverything.sh 61 14.884 06.06 368547 # Used to compare (Fill 8880, avg inst. lumi.: 14213 * 10^30 cm^-2 s^-1)
+#source doEverything.sh 62 15.473 07.06 368566
+#source doEverything.sh 63 16.030 08.06 368609
+#source doEverything.sh 64 16.905 09.06 368670
+#source doEverything.sh 65 17.665 10.06 368685
+#source doEverything.sh 66 18.734 11.06 368753
+#source doEverything.sh 67 19.304 12.06 368765
+#source doEverything.sh 68 19.304 13.06 368822 # Used for compare (Fill 8901, avg inst. lumi.: 18670 * 10^30 cm^-2 s^-1)
+# --- MD/TS 1
+#source doEverything.sh 69 19.894 14.06 368851
+#source doEverything.sh 72 19.894 17.06 369047
+#source doEverything.sh 74 19.894 19.06 369146
+#source doEverything.sh 75 19.894 20.06 369201
+#source doEverything.sh 76 19.894 21.06 369255
+#source doEverything.sh 77 19.894 22.06 369384
+#source doEverything.sh 78 19.894 23.06 369391
+#source doEverything.sh 79 19.894 24.06 369537
+#source doEverything.sh 80 19.894 25.06 369585
+#source doEverything.sh 81 19.894 26.06 369679
+#source doEverything.sh 82 19.894 27.06 369773
+# --- VdM scans
+#source doEverything.sh 83 19.8942 28.06 369794
+source doEverything.sh 84 19.8946 29.06 369802
+# --- End Run2023C , Start Run2023D (Ramp up after MDTS1)
