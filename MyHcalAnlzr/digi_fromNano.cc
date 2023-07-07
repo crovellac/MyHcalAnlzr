@@ -491,9 +491,11 @@ int main(int argc, char *argv[])
   ofstream DPGfileWidth;
   DPGfile.open("PedestalTable_Run"+runid+"_"+floatday+".2023.txt");
   DPGfileWidth.open("PedestalTableWidth_Run"+runid+"_"+floatday+".2023.txt");
-  DPGfile << "# Unit is fC" << "\n";
+  //DPGfile << "# Unit is fC" << "\n";
+  DPGfile << "#U fC  << this is the unit" << "\n";
   DPGfile << "#" << setw(16) << "ieta" << setw(16) << "iphi" << setw(16) << "depth" << setw(16) << "SubDet" << setw(12) << "CapId0" << setw(12) << "CapId1" << setw(12) << "CapId2" << setw(12) << "CapId3" << setw(12) << "WidthId0" << setw(12) << "WidthId1" << setw(12) << "WidthId2" << setw(12) << "WidthId3" << setw(11) << "RawId" << "\n";
-  DPGfileWidth << "# Unit is fC^2" << "\n";
+  //DPGfileWidth << "# Unit is fC^2" << "\n";
+  DPGfileWidth << "#U fC  << this is the unit" << "\n";
   DPGfileWidth << "#" << setw(16) << "ieta" << setw(16) << "iphi" << setw(16) << "depth" << setw(16) << "SubDet" << setw(12) << "Width0/0" << setw(12) << "Width0/1" << setw(12) << "Width0/2" << setw(12) << "Width0/3" << setw(12) << "Width1/0" << setw(12) << "Width1/1" << setw(12) << "Width1/2" << setw(12) << "Width1/3" << setw(12) << "Width2/0" << setw(12) << "Width2/1" << setw(12) << "Width2/2" << setw(12) << "Width2/3" << setw(12) << "Width3/0" << setw(12) << "Width3/1" << setw(12) << "Width3/2" << setw(12) << "Width3/3" << setw(11) << "RawId" << "\n";
   for (auto const& subdet : subdets){
     for (auto const& eta : CapIDarrayFC[subdet]){
@@ -525,7 +527,8 @@ int main(int argc, char *argv[])
               pedmean = pedsum / pedsize;
               pedstd = sqrt(pedsqsum / pedsize - pedmean * pedmean);
             }
-            if(subdet=="HE" and eta.first==-19 and phi.first==16 and dep.first==5 and capid==0) cout << "HE,-19,16,5,0: " << pedmean << ", " << pedstd << endl;
+            //if(subdet=="HE" and eta.first==-19 and phi.first==16 and dep.first==5 and capid==0) cout << "HE,-19,16,5,0: " << pedmean << ", " << pedstd << endl;
+            //if(subdet=="HB" and phi.first==7 and dep.first==3) cout << "HB,phi7,depth3: eta" << eta.first << ", capid" << capid << ": " << pedmean << ", " << pedstd << endl;
             CapIDMean[capid] = pedmean;
             CapIDStd[capid] = pedstd;
           }
