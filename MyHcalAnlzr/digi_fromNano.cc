@@ -45,7 +45,8 @@ int main(int argc, char *argv[])
   string fileName;
   for (const auto & entry : filesystem::directory_iterator("/eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/")){
     fileName = entry.path().filename().string();
-    if (fileName.find(floatday) != string::npos){
+    //if (fileName.find(floatday+".root") != string::npos){
+    if (0 == fileName.compare (fileName.length() - (floatday+".root").length(), (floatday+".root").length(), (floatday+".root"))){
       break;
     }
   }
@@ -53,6 +54,7 @@ int main(int argc, char *argv[])
 
   // There is a DISGUSTING amount of hardcoding here; unfortunately I wasn't able to loop over subdets or time slices.
 
+  cout << "Opening " << fileName << endl;
   TFile *f = new TFile(("/eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/"+fileName).c_str(), "read");
   TNtuple* qiedigi = (TNtuple*)f->Get("Events");
   int ntot = qiedigi->GetEntries();
@@ -94,16 +96,6 @@ int main(int argc, char *argv[])
   qiedigi->SetBranchAddress("DigiHB_fc5", &DigiHB_fc5);
   qiedigi->SetBranchAddress("DigiHB_fc6", &DigiHB_fc6);
   qiedigi->SetBranchAddress("DigiHB_fc7", &DigiHB_fc7);
-  float DigiHB_pedestalfc0[9072], DigiHB_pedestalfc1[9072], DigiHB_pedestalfc2[9072], DigiHB_pedestalfc3[9072];
-  float DigiHB_pedestalfc4[9072], DigiHB_pedestalfc5[9072], DigiHB_pedestalfc6[9072], DigiHB_pedestalfc7[9072];
-  qiedigi->SetBranchAddress("DigiHB_pedestalfc0", &DigiHB_pedestalfc0);
-  qiedigi->SetBranchAddress("DigiHB_pedestalfc1", &DigiHB_pedestalfc1);
-  qiedigi->SetBranchAddress("DigiHB_pedestalfc2", &DigiHB_pedestalfc2);
-  qiedigi->SetBranchAddress("DigiHB_pedestalfc3", &DigiHB_pedestalfc3);
-  qiedigi->SetBranchAddress("DigiHB_pedestalfc4", &DigiHB_pedestalfc4);
-  qiedigi->SetBranchAddress("DigiHB_pedestalfc5", &DigiHB_pedestalfc5);
-  qiedigi->SetBranchAddress("DigiHB_pedestalfc6", &DigiHB_pedestalfc6);
-  qiedigi->SetBranchAddress("DigiHB_pedestalfc7", &DigiHB_pedestalfc7);
   int DigiHB_adc0[9072], DigiHB_adc1[9072], DigiHB_adc2[9072], DigiHB_adc3[9072];
   int DigiHB_adc4[9072], DigiHB_adc5[9072], DigiHB_adc6[9072], DigiHB_adc7[9072];
   qiedigi->SetBranchAddress("DigiHB_adc0", &DigiHB_adc0);
@@ -134,16 +126,6 @@ int main(int argc, char *argv[])
   qiedigi->SetBranchAddress("DigiHE_fc5", &DigiHE_fc5);
   qiedigi->SetBranchAddress("DigiHE_fc6", &DigiHE_fc6);
   qiedigi->SetBranchAddress("DigiHE_fc7", &DigiHE_fc7);
-  float DigiHE_pedestalfc0[6768], DigiHE_pedestalfc1[6768], DigiHE_pedestalfc2[6768], DigiHE_pedestalfc3[6768];
-  float DigiHE_pedestalfc4[6768], DigiHE_pedestalfc5[6768], DigiHE_pedestalfc6[6768], DigiHE_pedestalfc7[6768];
-  qiedigi->SetBranchAddress("DigiHE_pedestalfc0", &DigiHE_pedestalfc0);
-  qiedigi->SetBranchAddress("DigiHE_pedestalfc1", &DigiHE_pedestalfc1);
-  qiedigi->SetBranchAddress("DigiHE_pedestalfc2", &DigiHE_pedestalfc2);
-  qiedigi->SetBranchAddress("DigiHE_pedestalfc3", &DigiHE_pedestalfc3);
-  qiedigi->SetBranchAddress("DigiHE_pedestalfc4", &DigiHE_pedestalfc4);
-  qiedigi->SetBranchAddress("DigiHE_pedestalfc5", &DigiHE_pedestalfc5);
-  qiedigi->SetBranchAddress("DigiHE_pedestalfc6", &DigiHE_pedestalfc6);
-  qiedigi->SetBranchAddress("DigiHE_pedestalfc7", &DigiHE_pedestalfc7);
   int DigiHE_adc0[6768], DigiHE_adc1[6768], DigiHE_adc2[6768], DigiHE_adc3[6768];
   int DigiHE_adc4[6768], DigiHE_adc5[6768], DigiHE_adc6[6768], DigiHE_adc7[6768];
   qiedigi->SetBranchAddress("DigiHE_adc0", &DigiHE_adc0);
@@ -168,10 +150,6 @@ int main(int argc, char *argv[])
   qiedigi->SetBranchAddress("DigiHF_fc0", &DigiHF_fc0);
   qiedigi->SetBranchAddress("DigiHF_fc1", &DigiHF_fc1);
   qiedigi->SetBranchAddress("DigiHF_fc2", &DigiHF_fc2);
-  float DigiHF_pedestalfc0[3456], DigiHF_pedestalfc1[3456], DigiHF_pedestalfc2[3456];
-  qiedigi->SetBranchAddress("DigiHF_pedestalfc0", &DigiHF_pedestalfc0);
-  qiedigi->SetBranchAddress("DigiHF_pedestalfc1", &DigiHF_pedestalfc1);
-  qiedigi->SetBranchAddress("DigiHF_pedestalfc2", &DigiHF_pedestalfc2);
   int DigiHF_adc0[3456], DigiHF_adc1[3456], DigiHF_adc2[3456];
   qiedigi->SetBranchAddress("DigiHF_adc0", &DigiHF_adc0);
   qiedigi->SetBranchAddress("DigiHF_adc1", &DigiHF_adc1);
@@ -192,18 +170,6 @@ int main(int argc, char *argv[])
   qiedigi->SetBranchAddress("DigiHO_fc7", &DigiHO_fc7);
   qiedigi->SetBranchAddress("DigiHO_fc8", &DigiHO_fc8);
   qiedigi->SetBranchAddress("DigiHO_fc9", &DigiHO_fc9);
-  float DigiHO_pedestalfc0[2160], DigiHO_pedestalfc1[2160], DigiHO_pedestalfc2[2160], DigiHO_pedestalfc3[2160], DigiHO_pedestalfc4[2160];
-  float DigiHO_pedestalfc5[2160], DigiHO_pedestalfc6[2160], DigiHO_pedestalfc7[2160], DigiHO_pedestalfc8[2160], DigiHO_pedestalfc9[2160];
-  qiedigi->SetBranchAddress("DigiHO_pedestalfc0", &DigiHO_pedestalfc0);
-  qiedigi->SetBranchAddress("DigiHO_pedestalfc1", &DigiHO_pedestalfc1);
-  qiedigi->SetBranchAddress("DigiHO_pedestalfc2", &DigiHO_pedestalfc2);
-  qiedigi->SetBranchAddress("DigiHO_pedestalfc3", &DigiHO_pedestalfc3);
-  qiedigi->SetBranchAddress("DigiHO_pedestalfc4", &DigiHO_pedestalfc4);
-  qiedigi->SetBranchAddress("DigiHO_pedestalfc5", &DigiHO_pedestalfc5);
-  qiedigi->SetBranchAddress("DigiHO_pedestalfc6", &DigiHO_pedestalfc6);
-  qiedigi->SetBranchAddress("DigiHO_pedestalfc7", &DigiHO_pedestalfc7);
-  qiedigi->SetBranchAddress("DigiHO_pedestalfc8", &DigiHO_pedestalfc8);
-  qiedigi->SetBranchAddress("DigiHO_pedestalfc9", &DigiHO_pedestalfc9);
   int DigiHO_adc0[2160], DigiHO_adc1[2160], DigiHO_adc2[2160], DigiHO_adc3[2160], DigiHO_adc4[2160];
   int DigiHO_adc5[2160], DigiHO_adc6[2160], DigiHO_adc7[2160], DigiHO_adc8[2160], DigiHO_adc9[2160];
   qiedigi->SetBranchAddress("DigiHO_adc0", &DigiHO_adc0);
@@ -724,6 +690,7 @@ int main(int argc, char *argv[])
         bool FiberNotInUHTR = (modulo==2 and find(FibNotInMod2.begin(), FibNotInMod2.end(), fiber) != FibNotInMod2.end()) or (modulo==0 and find(FibNotInMod0.begin(), FibNotInMod0.end(), fiber) != FibNotInMod0.end());
         for(int channel=0; channel<maxchannel; channel++){
           // (Note on ranges: RM 1-4, RMFI 1-8, CH 0-5 HE, CH 0-7 HB)
+          // When trying to find value for given crate&slot: Need to know uHTR_FI and FI_CH: nth value where n = HTRFI*8+CH+1
           if((modulo==2 and fiber==10 and (channel==4 || channel==5)) || (modulo==0 and fiber==11 and (channel==0 || channel==1))){ // Calibration unit fibers/channels (pin diodes). We don't use all of them but only a couple of channels, so they have ZS 0 instead of 255
             ZS = 0;
           }else if(modulo==2 and ((fiber==14 and channel==4) || (fiber==15 and channel==0) || (fiber==20 and channel==4) || (fiber==21 and channel==0))){ // Masked HE channels:

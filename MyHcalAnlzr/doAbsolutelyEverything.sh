@@ -69,7 +69,7 @@
 #source doEverything.sh 65 17.665 10.06 368685
 #source doEverything.sh 66 18.734 11.06 368753
 #source doEverything.sh 67 19.304 12.06 368765
-#source doEverything.sh 68 19.304 13.06 368822 # Used for compare (Fill 8901, avg inst. lumi.: 18670 * 10^30 cm^-2 s^-1)
+#source doEverything.sh 68 19.304 13.06 368822 # Used to compare (Fill 8901, avg inst. lumi.: 18670 * 10^30 cm^-2 s^-1)
 # --- MD/TS 1 -> Cosmics
 #source doEverything.sh 69 19.8939 14.06 368851
 #source doEverything.sh 72 19.894 17.06 369047
@@ -91,5 +91,12 @@
 #source doEverything.sh 87 20.181 02.07 369978
 #source doEverything.sh 88 20.302 03.07 369998
 #source doEverything.sh 89 20.870 04.07 370102
-#source doEverything.sh 90 21.373 05.07 370144 # Used for compare (Fill 9031, avg inst. lumi.: 14740 * 10^30 cm^-2 s^-1) -> Has some bad feature
-source doEverything.sh 91 22.715 06.07 370175 # Used to update DPG tables (Fill 9036, avg inst. lumi.: 16961 * 10^30 cm^-2 s^-1)
+#source doEverything.sh 90 21.373 05.07 370144 # Used to compare (Fill 9031, avg inst. lumi.: 14740 * 10^30 cm^-2 s^-1) -> Has some bad feature
+#source doEverything.sh 91 22.715 06.07 370175 # Used to update ZS/DPG tables (Fill 9036, avg inst. lumi.: 16961 * 10^30 cm^-2 s^-1)
+#source doEverything.sh 92 23.301 07.07 370293
+#source doEverything.sh 93 23.976 08.07 370300
+#source doEverything.sh 94 25.341 09.07 370340
+#source doEverything.sh 95 26.256 10.07 370406
+#source doEverything.sh 96 26.860 11.07 370497 # Used to compare (Fill 9057, avg inst. lumi.: 17892 * 10^30 cm^-2 s^-1)
+#source doEverything.sh 97 27.151 12.07 370560
+source doEverything.sh 98 27.898 13.07 370580
