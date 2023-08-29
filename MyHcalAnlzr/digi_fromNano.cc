@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
   string fileName;
   for (const auto & entry : filesystem::directory_iterator("/eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/")){
     fileName = entry.path().filename().string();
+    if(fileName.length() <= (floatday+".root").length()) continue;
     //if (fileName.find(floatday+".root") != string::npos){
     if (0 == fileName.compare (fileName.length() - (floatday+".root").length(), (floatday+".root").length(), (floatday+".root"))){
       break;

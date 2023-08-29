@@ -13,17 +13,20 @@ MakeSmallerFiles = True
 def MakeSmall(path):
   patht1 = path.replace(".root", "_temp.root")
   patht2 = path.replace(".root", "_temp2.root")
-  while True:
-    # Remove HLT branches and filter non-eventtype 1 events
-    #os.system('rooteventselector -s "(uMNio_EventType == 1)" -e "HLT_*" '+path+':Events '+patht1)
-    os.system('rooteventselector -s "(uMNio_EventType == 1)" -e "HLT*,*RecHit*,DigiHF_ok*,DigiHO_er*,DigiHO_dv*,*Error,*fiber*,*flags,*pedestalfc*,*subdet,*soi,*tdc*,*valid" '+path+':Events '+patht1)
-    # Re-compress
-    success = os.system('python3 haddnano.py '+patht2+' '+patht1)
-    os.system('rm '+patht1)
-    if success==0:
-      break
-    else:
-      os.system('rm '+patht2)
+  try:
+    while True:
+      # Remove HLT branches and filter non-eventtype 1 events
+      #os.system('rooteventselector -s "(uMNio_EventType == 1)" -e "HLT_*" '+path+':Events '+patht1)
+      os.system('rooteventselector -s "(uMNio_EventType == 1)" -e "HLT*,*RecHit*,DigiHF_ok*,DigiHO_er*,DigiHO_dv*,*Error,*fiber*,*flags,*pedestalfc*,*subdet,*soi,*tdc*,*valid" '+path+':Events '+patht1)
+      # Re-compress
+      success = os.system('python3 haddnano.py '+patht2+' '+patht1)
+      os.system('rm '+patht1)
+      if success==0:
+        break
+      else:
+        os.system('rm '+patht2)
+  except KeyboardInterrupt:
+    exit()
   os.system('mv '+path+' '+path.replace(".root", "_FULL.root"))
   os.system('mv '+patht2+' '+path)
 
