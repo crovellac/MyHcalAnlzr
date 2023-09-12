@@ -26,6 +26,7 @@ def MakeSmall(path):
         break
       else:
         os.system('rm '+patht2)
+      tries += 1
   except OSError: # File not found
     exit()
   except KeyboardInterrupt:
@@ -121,7 +122,7 @@ else:
   largefiles = {}
   for f in files:
     fs = os.path.getsize(f)
-    if fs > 3758096384: # 3.5G
+    if fs > 3758096384 or len(files)==1: # 3.5G
       largefiles[os.path.getmtime(f)] = f
   if largefiles != {}:
     myfile = largefiles[ sorted(list(largefiles.keys()))[int(len(largefiles)/2.0)] ]
