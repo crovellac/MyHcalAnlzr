@@ -14,7 +14,8 @@ def MakeSmall(path):
   patht1 = path.replace(".root", "_temp.root")
   patht2 = path.replace(".root", "_temp2.root")
   try:
-    while True:
+    tries = 0
+    while tries < 10:
       # Remove HLT branches and filter non-eventtype 1 events
       #os.system('rooteventselector -s "(uMNio_EventType == 1)" -e "HLT_*" '+path+':Events '+patht1)
       os.system('rooteventselector -s "(uMNio_EventType == 1)" -e "HLT*,*RecHit*,DigiHF_ok*,DigiHO_er*,DigiHO_dv*,*Error,*fiber*,*flags,*pedestalfc*,*subdet,*soi,*tdc*,*valid" '+path+':Events '+patht1)
@@ -25,6 +26,8 @@ def MakeSmall(path):
         break
       else:
         os.system('rm '+patht2)
+  except OSError: # File not found
+    exit()
   except KeyboardInterrupt:
     exit()
   os.system('mv '+path+' '+path.replace(".root", "_FULL.root"))
@@ -34,7 +37,9 @@ def MakeSmall(path):
 #path = "/eos/cms/tier0/store/data/Run2023A/TestEnablesEcalHcal/*/*/*"  # 06.04.-20.04.
 #path = "/eos/cms/tier0/store/data/Run2023B/TestEnablesEcalHcal/*/*/*"  # 21.04.-05.05.
 #path = "/eos/cms/tier0/store/data/Run2023C/TestEnablesEcalHcal/*/*/*"  # 06.05.-29.06.
-path = "/eos/cms/tier0/store/data/Run2023D/TestEnablesEcalHcal/*/*/*"
+#path = "/eos/cms/tier0/store/data/Run2023D/TestEnablesEcalHcal/*/*/*"  # 30.06.-29.08.
+#path = "/eos/cms/tier0/store/data/Run2023E/TestEnablesEcalHcal/*/*/*"  # 30.08.-07.09.
+path = "/eos/cms/tier0/store/data/Run2023F/TestEnablesEcalHcal/*/*/*"
 
 blacklist_file = ["244aa98d-1bc6-4c3f-bf02-36032473b104.root"]
 whitelist_file = ["0bc49ae3-69bc-439c-8dde-526a71ca1e39.root", "4e32fe18-85ca-4c35-9790-821dd051f4cf.root", "abbda151-86ea-4609-a0ba-820fd14fa9e9.root", "3afeb82e-a911-46c2-bbcb-dc74f90022cd.root", "663ffe17-ddf0-43b5-ba49-24594331baaf.root", "0ba626ee-a60a-436a-bd10-35d05934908f.root", "5f0f2e56-2c6f-4943-95fb-49c79ef053f7.root", "d0497690-6393-44c9-a08f-ec046e5f5cf7.root", "4c993032-6af5-4ea1-8fc0-d0bea61b10e2.root"] # Use this file, to get ZS threshold at certain inst. lumi.
