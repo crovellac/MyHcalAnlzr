@@ -7,11 +7,15 @@ This is the setup for GLOBAL pedestal studies! For the LOCAL setup, check out th
 
 The setup was changed to make everything more automated. When running by yourself, just make sure that outputs are being written/read in accessible places! (I.e., not on my personal EOS space. Just `grep` for `dmroy`.)
 
-The HcalNano setup requires the HcalNano package: `https://gitlab.cern.ch/cmshcal/hcalpfg/hcalnanoprod`. At this time (End of April), a manual fix is required: The path `HLT_HcalCalibration_v5` was replaced for `HLT_HcalCalibration_v6` (for collisions), and so this change needs to be made in the HcalNano configurations.
+~~The HcalNano setup requires the HcalNano package: `https://gitlab.cern.ch/cmshcal/hcalpfg/hcalnanoprod`. At this time (End of April), a manual fix is required: The path `HLT_HcalCalibration_v5` was replaced for `HLT_HcalCalibration_v6` (for collisions), and so this change needs to be made in the HcalNano configurations.~~
+
+HcalNano is automatically incoorperated in new CMSSW releases, so nothing else is needed besides this repository. An up-to-date CMSSW version is anyhow required to process global runs. At this time (Run2023F), CMSSW_13_2_2 works.
 
 In the file `doAbsolutelyEverything.sh` one should document the days and the integrated luminosity at the time. As an optional argument, add the run number of a COLLISIONS run, ideally close to the corresponding recorded luminosity at the time. Comment out already processed lines and run the script to process new files.
 
 In case some steps need to be redone, uncomment everything in `doAbsolutelyEverything.sh`, and comment intermediate steps not required to be redone (such as running `cmsRun`) in the script `doEverything.sh`
+
+Before running it the first time, remember to compile first!
 
 
 ## How to get new data
