@@ -11,6 +11,8 @@ In the file `doAbsolutelyEverything.sh` one should document the days at which lo
 
 In case some steps need to be redone, uncomment everything in `doAbsolutelyEverything.sh`, and comment intermediate steps not required to be redone (such as running `cmsRun`) in the script `doEverything.sh`
 
+Before running it the first time, remember to compile first!
+
 
 ## How to get new data
 
