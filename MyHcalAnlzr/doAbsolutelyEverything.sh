@@ -136,4 +136,9 @@
 #source doEverything.sh 154 29.637 07.09 373060
 # --- End Run2023E , Start Run2023F (Very high beta* runs)
 #source doEverything.sh 158 29.637 11.09 373244
-source doEverything.sh 159 29.637 12.09 373279
+#source doEverything.sh 159 29.637 12.09 373279
+#source doEverything.sh 160 29.637 13.09 373370
+#source doEverything.sh 160 29.637 14.09 373370
+#source doEverything.sh 161 29.637 15.09 373389
+#source doEverything.sh 162 29.637 15.09 373483
+source doEverything.sh 164 29.637 17.09 373573
