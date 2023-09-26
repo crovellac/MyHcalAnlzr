@@ -138,7 +138,12 @@
 #source doEverything.sh 158 29.637 11.09 373244
 #source doEverything.sh 159 29.637 12.09 373279
 #source doEverything.sh 160 29.637 13.09 373370
-#source doEverything.sh 160 29.637 14.09 373370
-#source doEverything.sh 161 29.637 15.09 373389
+#source doEverything.sh 161 29.637 14.09 373389
 #source doEverything.sh 162 29.637 15.09 373483
-source doEverything.sh 164 29.637 17.09 373573
+#source doEverything.sh 164 29.637 17.09 373573
+#source doEverything.sh 165 29.637 18.09 373605 
+#source doEverything.sh 166 29.637 19.09 373664
+source doEverything.sh 167 29.637 20.09 373779
+#source doEverything.sh 168 29.637 21.09 373872
+#source doEverything.sh 169 29.637 22.09 373960
+#source doEverything.sh 170 29.637 23.09 373985

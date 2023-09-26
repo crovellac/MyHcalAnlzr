@@ -4,7 +4,7 @@ cmsDriver.py NANO \
     --datatier NANOAOD \
     --eventcontent NANOAOD \
     --filein FILEIN \
-    --fileout /eos/user/d/dmroy/HCAL/MyHcalAnlzr_Nano/output_CalibRuns_Nano_RunXXXXXX_DAY.root \
+    --fileout /eos/user/c/ccrovell/HCAL/MyHcalAnlzr_Nano/output_CalibRuns_Nano_RunXXXXXX_DAY.root \
     -n 5000 \
     --nThreads 4 \
     --conditions auto:run3_data_prompt \

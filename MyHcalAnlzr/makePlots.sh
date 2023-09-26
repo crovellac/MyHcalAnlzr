@@ -17,5 +17,5 @@ mv PedestalTable*txt /afs/cern.ch/user/c/ccrovell/public/PED_DPGcalibration/
 mv ${dir}/byDay/* /eos/user/c/ccrovell/www/plots_archive/PED_plots_2023/byDay/
 mv ${dir}/byLumi/* /eos/user/c/ccrovell/www/plots_archive/PED_plots_2023/byLumi/
 mv ${dir}/histograms/* /eos/user/c/ccrovell/www/plots_archive/PED_plots_2023/histograms/
-#mv ${dir}/extrapolations/* /eos/user/d/dmroy/www/plots_archive/PED_plots_2023/extrapolations/
+#mv ${dir}/extrapolations/* /eos/user/c/ccrovell/www/plots_archive/PED_plots_2023/extrapolations/
 rm -r ${dir}

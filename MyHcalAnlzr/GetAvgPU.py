@@ -53,6 +53,7 @@ else:
   print("I've been told this corresponds to run %s, LS %s ..."%(run,lumi))
   output = dasgoclient("dataset run="+run)
   datasets = output.split("\n")
+  print(datasets)
   dataset = [d for d in datasets if "TestEnablesEcalHcal" in d][0]
   output = dasgoclient("file dataset="+dataset+" run="+run+" lumi="+lumi)
   print("Use this file:")
