@@ -143,4 +143,33 @@
 #source doEverything.sh 375420 375422 197 29.637 20.10
 #source doEverything.sh 375468 375469 198 29.637 21.10
 #source doEverything.sh 375495 375496 199 29.637 22.10
-source doEverything.sh 375515 375516 200 29.637 23.10
+#source doEverything.sh 375515 375516 200 29.637 23.10
+#source doEverything.sh 375554 375560 201 29.6376 24.10
+#source doEverything.sh 375632 375634 202 29.6376 25.10
+#source doEverything.sh 375705 375706 204 29.6376 27.10
+#source doEverything.sh 375792 375795 206 29.6376 29.10
+#source doEverything.sh 375837 375838 207 29.6376 30.10
+#source doEverything.sh 375879 375880 208 29.6376 31.10
+#Start of YETS
+#source doEverything.sh 375997 376000 216 29.6376 08.11
+#source doEverything.sh 376032 376033 217 29.6376 09.11
+#source doEverything.sh 376056 376057 218 29.6376 10.11
+#source doEverything.sh 376064 376065 219 29.6376 11.11
+#source doEverything.sh 376067 376068 220 29.6376 12.11
+#source doEverything.sh 376079 376080 221 29.6376 13.11
+#source doEverything.sh 376097 376095 222 29.6376 14.11
+#source doEverything.sh 376105 376104 223 29.6376 15.11
+#source doEverything.sh 376114 376113 224 29.6376 16.11
+#source doEverything.sh 376130 376129 225 29.6376 17.11
+#source doEverything.sh 376133 376132 226 29.6376 18.11
+#source doEverything.sh 376136 375135 227 29.6376 19.11
+#source doEverything.sh 376157 376164 229 29.6376 21.11
+#source doEverything.sh 376193 376194 231 29.6376 23.11
+#source doEverything.sh 376252 376253 232 29.6376 24.11
+#source doEverything.sh 376263 376264 233 29.6376 25.11
+#Start of 2024 ramp
+#source doEverything.sh XXX    376988 322 0.0 22.02
+#source doEverything.sh 377022 377023 323 0.0 23.02
+#source doEverything.sh 377071 377072 326 0.0 26.02
+#source doEverything.sh 377097 377099 327 0.0 27.02
+source doEverything.sh 377135 377137 328 0.0 28.02
