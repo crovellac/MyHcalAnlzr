@@ -184,4 +184,13 @@
 #source doEverything.sh 204 29.6376 27.10 375739
 #source doEverything.sh 205 29.6376 28.10 375754
 #source doEverything.sh 206 29.6376 29.10 375823
-source doEverything.sh 207 29.6376 30.10 375831
+#source doEverything.sh 207 29.6376 30.10 375831
+# Start of 2024 (skipped a few days because calibration gap was bad until fix)
+#source doEverything.sh 1 0.0 29.02 377252
+#source doEverything.sh 2 0.0 01.03 377290
+#source doEverything.sh 3 0.0 02.03 377297
+#source doEverything.sh 5 0.0 04.03 377327
+#source doEverything.sh 6 0.0 05.03 377461
+#source doEverything.sh 7 0.0 06.03 377470
+#source doEverything.sh 8 0.0 07.03 377578
+#source doEverything.sh 10 0.0 09.03 377662
