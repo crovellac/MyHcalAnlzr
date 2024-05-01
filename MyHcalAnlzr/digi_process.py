@@ -21,6 +21,7 @@ else:
   runid = days
   lumi = fileName.split("LS")[1].split("_")[0]
 fin=ROOT.TFile.Open(fileName, "READ")
+
 histos = {}
 histos["FC"] = {}
 histos["ADC"] = {}
@@ -44,10 +45,11 @@ for depth in range(4):
   pedtrend.append("HB_depth"+str(depth+1))
 for depth in range(7):
   pedtrend.append("HE_depth"+str(depth+1))
-pedtrend += ["HB_sipmSmall_phi,1,72", "HB_sipmLarge_phi,1,72", "HE_sipmSmall_phi,1,72", "HE_sipmLarge_phi,1,72"]
-pedtrend += ["HB_sipmSmall_phi,18,19", "HB_sipmLarge_phi,18,19", "HE_sipmSmall_phi,18,19", "HE_sipmLarge_phi,18,19"]
-pedtrend += ["HB_sipmSmall_phi,36,37", "HB_sipmLarge_phi,36,37", "HE_sipmSmall_phi,36,37", "HE_sipmLarge_phi,36,37"]
+#pedtrend += ["HB_sipmSmall_phi,1,72", "HB_sipmLarge_phi,1,72", "HE_sipmSmall_phi,1,72", "HE_sipmLarge_phi,1,72"]
+#pedtrend += ["HB_sipmSmall_phi,18,19", "HB_sipmLarge_phi,18,19", "HE_sipmSmall_phi,18,19", "HE_sipmLarge_phi,18,19"]
+#pedtrend += ["HB_sipmSmall_phi,36,37", "HB_sipmLarge_phi,36,37", "HE_sipmSmall_phi,36,37", "HE_sipmLarge_phi,36,37"]
 pedtrend += ["HB_sipmSmall_HBP14RM1", "HB_sipmLarge_HBP14RM1", "HB_sipmSmall_HBM09RM3", "HB_sipmLarge_HBM09RM3"]
+pedtrend += ["HB_sipmSmall_HBM04RM3", "HB_sipmLarge_HBM04RM3"]
 
 def IsHBP14RM1(hname):
   if "iphi51" in hname and "ieta-" not in hname: return True
@@ -55,12 +57,15 @@ def IsHBP14RM1(hname):
 def IsHBM09RM3(hname):
   if "iphi32" in hname and "ieta-" in hname: return True
   return False
+def IsHBM04RM3(hname):
+  if "iphi12" in hname and "ieta-" in hname: return True
+  return False
 
 # Process
 for p in pedtrend:
   subdet = p.split("_")[0]
-  finalhistos[p+"_ADC_Mean"] = ROOT.TH1F(p+"_pedADCMean_run"+runid, "Pedestal Mean; ADC; Entries", 960, 0, 32)
-  finalhistos[p+"_ADC_RMS"] = ROOT.TH1F(p+"_pedADCRMS_run"+runid, "Pedestal RMS; ADC; Entries", 960, 0, 32)
+  finalhistos[p+"_ADC_Mean"] = ROOT.TH1F(p+"_pedADCMean_run"+runid, "Pedestal Mean; ADC; Entries",  960, 0, 32)
+  finalhistos[p+"_ADC_RMS"] = ROOT.TH1F(p+"_pedADCRMS_run"+runid, "Pedestal RMS; ADC; Entries",  960, 0, 32)
   finalhistos[p+"_FC_Mean"] = ROOT.TH1F(p+"_pedFCMean_run"+runid, "Pedestal Mean; fC; Entries", 10000, 0, 1000)
   finalhistos[p+"_FC_RMS"] = ROOT.TH1F(p+"_pedFCRMS_run"+runid, "Pedestal RMS; fC; Entries", 10000, 0, 1000)
   for unit in ["ADC", "FC"]:
@@ -73,16 +78,20 @@ for p in pedtrend:
           if not IsHBP14RM1(hname): skip=True
         elif "HBM09RM3" in cut:
           if not IsHBM09RM3(hname): skip=True
+        elif "HBM04RM3" in cut:
+          if not IsHBM04RM3(hname): skip=True
         elif cut not in hname: skip = True
-        #elif cut!="sipm" and cut not in hname: skip = True # cut!="sipm" -> Temporary, until SiPM sizes are saved. I need to fix naming conventions of saved histograms
       if ("HB" in p) and ("HBP14RM1" not in p) and (IsHBP14RM1(hname)): skip=True
       if ("HB" in p) and ("HBM09RM3" not in p) and (IsHBM09RM3(hname)): skip=True
+      if ("HB" in p) and ("HBM04RM3" not in p) and (IsHBM04RM3(hname)): skip=True
       if not skip:
         mean = histos[unit][subdet][hname].GetMean()
         rms = histos[unit][subdet][hname].GetRMS()
         if mean!=0.0 and rms!=0.0:
           finalhistos[p+"_"+unit+"_Mean"].Fill(mean)
           finalhistos[p+"_"+unit+"_RMS"].Fill(rms)
+        #if mean<1 or rms<0.2: print("Low values for",subdet,hname,": Mean =",mean,", RMS =",rms)
+        #if mean>7 and "HE" in p: print("High values for",subdet,hname,": Mean =",mean,", RMS =",rms)
 
 # Write in text file
 savefilename = "SaveFile.txt" if not WholeRun else "SaveFile_"+runid+".txt"
@@ -108,4 +117,3 @@ fout.Close()
 fin.Close()
 print("Done!")
 exit()
-

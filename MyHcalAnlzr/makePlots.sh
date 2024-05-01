@@ -1,4 +1,4 @@
-dir="PED_plots_2023" # $1
+dir="PED_plots_2024" # $1
 
 mkdir ${dir}
 python3 Plotting.py hist_CalibOutput_hadd.root daysince
@@ -12,10 +12,10 @@ mv ${dir}/byLumi/Ped* ${dir}/histograms
 ##rm ${dir}/byDay/Ex*
 #mv ${dir}/byLumi/Ex* ${dir}/extrapolations
 
-mv Table*txt /afs/cern.ch/user/c/ccrovell/public/PED_tables_2023/
+mv Table*txt /afs/cern.ch/user/c/ccrovell/public/PED_tables_2024/
 mv PedestalTable*txt /afs/cern.ch/user/c/ccrovell/public/PED_DPGcalibration/
-mv ${dir}/byDay/* /eos/user/c/ccrovell/www/plots_archive/PED_plots_2023/byDay/
-mv ${dir}/byLumi/* /eos/user/c/ccrovell/www/plots_archive/PED_plots_2023/byLumi/
-mv ${dir}/histograms/* /eos/user/c/ccrovell/www/plots_archive/PED_plots_2023/histograms/
-#mv ${dir}/extrapolations/* /eos/user/c/ccrovell/www/plots_archive/PED_plots_2023/extrapolations/
+mv ${dir}/byDay/* /eos/user/c/ccrovell/www/plots_archive/PED_plots_2024/byDay/
+mv ${dir}/byLumi/* /eos/user/c/ccrovell/www/plots_archive/PED_plots_2024/byLumi/
+mv ${dir}/histograms/* /eos/user/c/ccrovell/www/plots_archive/PED_plots_2024/histograms/
+#mv ${dir}/extrapolations/* /eos/user/c/ccrovell/www/plots_archive/PED_plots_2024/extrapolations/
 rm -r ${dir}

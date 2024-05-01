@@ -427,7 +427,7 @@ int main(int argc, char *argv[])
   cout << "Writing table..." << endl;
 
   ofstream tablefile;
-  tablefile.open("Table_Run"+runid+"_"+floatday+".2023.txt");
+  tablefile.open("Table_Run"+runid+"_"+floatday+".2024.txt");
   tablefile << setw(8) << "SubDet" << setw(8) << "SiPM" << setw(8) << "ieta" << setw(8) << "iphi" << setw(8) << "depth" << setw(12) << "ADC Mean" << setw(12) << "ADC RMS" << setw(12) << "fC Mean" << setw(12) << "fC RMS" << "\n";
   for (auto const& subdet : subdets){
     for (auto const& siz : histarrayFC[subdet]){
@@ -456,8 +456,8 @@ int main(int argc, char *argv[])
   int pedsize;
   ofstream DPGfile;
   ofstream DPGfileWidth;
-  DPGfile.open("PedestalTable_Run"+runid+"_"+floatday+".2023.txt");
-  DPGfileWidth.open("PedestalTableWidth_Run"+runid+"_"+floatday+".2023.txt");
+  DPGfile.open("PedestalTable_Run"+runid+"_"+floatday+".2024.txt");
+  DPGfileWidth.open("PedestalTableWidth_Run"+runid+"_"+floatday+".2024.txt");
   //DPGfile << "# Unit is fC" << "\n";
   DPGfile << "#U fC  << this is the unit" << "\n";
   DPGfile << "#" << setw(16) << "ieta" << setw(16) << "iphi" << setw(16) << "depth" << setw(16) << "SubDet" << setw(12) << "CapId0" << setw(12) << "CapId1" << setw(12) << "CapId2" << setw(12) << "CapId3" << setw(12) << "WidthId0" << setw(12) << "WidthId1" << setw(12) << "WidthId2" << setw(12) << "WidthId3" << setw(11) << "RawId" << "\n";
@@ -646,7 +646,7 @@ int main(int argc, char *argv[])
   cout << "Writing xml..." << endl;
 
   ofstream xmlfile;
-  xmlfile.open(floatday+".2023.xml");
+  xmlfile.open(floatday+".2024.xml");
   //string tag = "hb12-13_he8_hf0_ho11_v14";
   string tag = floatday+"_MeanPlus"+StrXtimesRMS+"RMS";
   auto MakeNewBrick = [&xmlfile](int crate, int slot, int elements, string tag){
@@ -710,9 +710,12 @@ int main(int argc, char *argv[])
             ZS = 255;
           /*}else if(modulo==2 and (fiber==12 || fiber==13 || fiber==22 || fiber==23) and (channel==6 || channel==7)){ // Some of these are CU fibers, there are normal (?). During first tests, I determined that these were placeholders for HE fibers, all have depth "-999" and would get 255 at a leter check, but were regular HE ZS 8 for some reason.
             ZS = 8;*/
-          }else if(crate==20 and slot==2 and fiber==6){ // Masked HBM04 RM3 fiber
-            ZS = 255;
-          }else{
+          //}else if(crate==20 and slot==2 and fiber==6){ // Masked HBM04 RM3 fiber
+          //  ZS = 255;
+          } else {
+            if(crate==20 and slot==2 and fiber==6) {
+	      cout << "Doing the normal thing for HBM04 RM3" << endl;
+	    }
             mystring = matching[to_string(crate)+"_"+to_string(slot)+"_"+to_string(fiber)+"_"+to_string(channel)];
             //if(crate==20 && slot==2) cout << to_string(crate)+"_"+to_string(slot)+"_"+to_string(fiber)+"_"+to_string(channel) << " -> " << mystring << endl;
             istringstream iss(mystring);
