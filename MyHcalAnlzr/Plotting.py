@@ -184,7 +184,7 @@ if not os.path.isdir(output): os.mkdir(output)
 fin=ROOT.TFile.Open(inputfile, "READ")
 
 if dowhat == "daysince":
-  xtitle = "Days since 6th April 2023"
+  xtitle = "Days since 19th March 2024"
 elif dowhat == "lumi":
   xtitle = "Luminosity [fb^{-1}]"
 
@@ -236,10 +236,11 @@ for title in grdict:
     subdet = grdict[title][1]
     parts = [trend for trend in trends if trend.startswith(subdet) and trend.endswith(unit) and "depth" not in trend]
     # Manually sort:
-    if parts == ['HB_sipmLarge_'+unit, 'HB_sipmLarge_HBM09RM3_'+unit, 'HB_sipmLarge_HBP14RM1_'+unit, 'HB_sipmLarge_phi,1,72_'+unit, 'HB_sipmLarge_phi,18,19_'+unit, 'HB_sipmLarge_phi,36,37_'+unit, 'HB_sipmSmall_'+unit, 'HB_sipmSmall_HBM09RM3_'+unit, 'HB_sipmSmall_HBP14RM1_'+unit, 'HB_sipmSmall_phi,1,72_'+unit, 'HB_sipmSmall_phi,18,19_'+unit, 'HB_sipmSmall_phi,36,37_'+unit]:
-      parts = ['HB_sipmLarge_'+unit, 'HB_sipmSmall_'+unit, 'HB_sipmLarge_phi,1,72_'+unit, 'HB_sipmSmall_phi,1,72_'+unit, 'HB_sipmLarge_phi,36,37_'+unit, 'HB_sipmSmall_phi,36,37_'+unit, 'HB_sipmLarge_HBP14RM1_'+unit, 'HB_sipmSmall_HBP14RM1_'+unit, 'HB_sipmLarge_HBM09RM3_'+unit, 'HB_sipmSmall_HBM09RM3_'+unit] # , 'HB_sipmLarge_phi,18,19_'+unit, 'HB_sipmSmall_phi,18,19_'+unit
-    if parts == ['HE_sipmLarge_'+unit, 'HE_sipmLarge_phi,1,72_'+unit, 'HE_sipmLarge_phi,18,19_'+unit, 'HE_sipmLarge_phi,36,37_'+unit, 'HE_sipmSmall_'+unit, 'HE_sipmSmall_phi,1,72_'+unit, 'HE_sipmSmall_phi,18,19_'+unit, 'HE_sipmSmall_phi,36,37_'+unit]:
-      parts = ['HE_sipmLarge_'+unit, 'HE_sipmSmall_'+unit, 'HE_sipmLarge_phi,1,72_'+unit, 'HE_sipmSmall_phi,1,72_'+unit, 'HE_sipmLarge_phi,36,37_'+unit, 'HE_sipmSmall_phi,36,37_'+unit] # , 'HE_sipmLarge_phi,18,19_'+unit, 'HE_sipmSmall_phi,18,19_'+unit
+    if parts == ['HB_sipmLarge_'+unit, 'HB_sipmLarge_HBM04RM3_'+unit, 'HB_sipmLarge_HBM09RM3_'+unit, 'HB_sipmLarge_HBP14RM1_'+unit, 'HB_sipmSmall_'+unit, 'HB_sipmSmall_HBM04RM3_'+unit, 'HB_sipmSmall_HBM09RM3_'+unit, 'HB_sipmSmall_HBP14RM1_'+unit]:
+      print("Sorting this")
+      parts = ['HB_sipmLarge_'+unit, 'HB_sipmSmall_'+unit,  'HB_sipmLarge_HBP14RM1_'+unit,'HB_sipmSmall_HBP14RM1_'+unit, 'HB_sipmLarge_HBM09RM3_'+unit, 'HB_sipmSmall_HBM09RM3_'+unit, 'HB_sipmLarge_HBM04RM3_'+unit, 'HB_sipmSmall_HBM04RM3_'+unit,] # , 'HB_sipmLarge_phi,18,19_'+unit, 'HB_sipmSmall_phi,18,19_'+unit
+    #if parts == ['HE_sipmLarge_'+unit, 'HE_sipmLarge_phi,1,72_'+unit, 'HE_sipmLarge_phi,18,19_'+unit, 'HE_sipmLarge_phi,36,37_'+unit, 'HE_sipmSmall_'+unit, 'HE_sipmSmall_phi,1,72_'+unit, 'HE_sipmSmall_phi,18,19_'+unit, 'HE_sipmSmall_phi,36,37_'+unit]:
+     # parts = ['HE_sipmLarge_'+unit, 'HE_sipmSmall_'+unit, 'HE_sipmLarge_phi,1,72_'+unit, 'HE_sipmSmall_phi,1,72_'+unit, 'HE_sipmLarge_phi,36,37_'+unit, 'HE_sipmSmall_phi,36,37_'+unit] # , 'HE_sipmLarge_phi,18,19_'+unit, 'HE_sipmSmall_phi,18,19_'+unit
     thismin, thismax = MinMaxAxis((limits[trend+meanrms][0] for trend in parts), (limits[trend+meanrms][1] for trend in parts), 0.5)
     if subdet=="HB": color = ROOT.kBlue
     elif subdet=="HE": color = ROOT.kGreen
@@ -272,6 +273,10 @@ for title in grdict:
         tcolor = color+4
         marker = 34
         line = 8
+      elif "HBM04RM3" in part:
+        tcolor = color+4
+        marker = 35
+        line = 9
       else:
         tcolor = color
         marker = 21
@@ -281,7 +286,7 @@ for title in grdict:
       gr[part][meanrms].SetMarkerStyle(marker)
       gr[part][meanrms].SetMarkerColor(tcolor)
       if j==0:
-        gr[part][meanrms].SetTitle(title)
+        gr[part][meanrms].SetTitle("Local "+title)
         gr[part][meanrms].GetXaxis().SetTitle(xtitle)
         gr[part][meanrms].GetXaxis().SetDecimals()
         #gr[part][meanrms].GetXaxis().SetMaxDigits(3)
@@ -309,13 +314,14 @@ for title in grdict:
         elif "phi,1," in part: sizename += ", iphi in [72,1]" 
         elif "HBP14RM1" in part: sizename += ", HBP14 RM1" 
         elif "HBM09RM3" in part: sizename += ", HBM09 RM3" 
+        elif "HBM04RM3" in part: sizename += ", HBM04 RM3"
       label = subdet + " " + sizename + ""
       legend[-1].AddEntry(gr[part][meanrms], label, "pl")
     # Vertical lines at 1st of every month
     if dowhat=="daysince":
       monthlines = []
       for linehere in [31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]:
-        linehere = linehere - 95 # Start counting from 6th April instead of 1st January
+        linehere = linehere - 77 # Start counting from 6th April instead of 1st January
         if lowedge > linehere or upedge < linehere: continue
         monthlines.append(ROOT.TLine(linehere, thismin - (thismax-thismin)*0.2, linehere, thismax + (thismax-thismin)*0.3))
         monthlines[-1].SetLineStyle(3)

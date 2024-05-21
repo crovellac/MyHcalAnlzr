@@ -43,16 +43,20 @@ for depth in range(4):
   pedtrend.append("HB_depth"+str(depth+1))
 for depth in range(7):
   pedtrend.append("HE_depth"+str(depth+1))
-pedtrend += ["HB_sipmSmall_phi,1,72", "HB_sipmLarge_phi,1,72", "HE_sipmSmall_phi,1,72", "HE_sipmLarge_phi,1,72"]
-pedtrend += ["HB_sipmSmall_phi,18,19", "HB_sipmLarge_phi,18,19", "HE_sipmSmall_phi,18,19", "HE_sipmLarge_phi,18,19"]
-pedtrend += ["HB_sipmSmall_phi,36,37", "HB_sipmLarge_phi,36,37", "HE_sipmSmall_phi,36,37", "HE_sipmLarge_phi,36,37"]
+#pedtrend += ["HB_sipmSmall_phi,1,72", "HB_sipmLarge_phi,1,72", "HE_sipmSmall_phi,1,72", "HE_sipmLarge_phi,1,72"]
+#pedtrend += ["HB_sipmSmall_phi,18,19", "HB_sipmLarge_phi,18,19", "HE_sipmSmall_phi,18,19", "HE_sipmLarge_phi,18,19"]
+#pedtrend += ["HB_sipmSmall_phi,36,37", "HB_sipmLarge_phi,36,37", "HE_sipmSmall_phi,36,37", "HE_sipmLarge_phi,36,37"]
 pedtrend += ["HB_sipmSmall_HBP14RM1", "HB_sipmLarge_HBP14RM1", "HB_sipmSmall_HBM09RM3", "HB_sipmLarge_HBM09RM3"]
+pedtrend += ["HB_sipmSmall_HBM04RM3", "HB_sipmLarge_HBM04RM3"]
 
 def IsHBP14RM1(hname):
   if "iphi51" in hname and "ieta-" not in hname: return True
   return False
 def IsHBM09RM3(hname):
   if "iphi32" in hname and "ieta-" in hname: return True
+  return False
+def IsHBM04RM3(hname):
+  if "iphi12" in hname and "ieta-" in hname: return True
   return False
 
 # Process
@@ -72,9 +76,12 @@ for p in pedtrend:
           if not IsHBP14RM1(hname): skip=True
         elif "HBM09RM3" in cut:
           if not IsHBM09RM3(hname): skip=True
+        elif "HBM04RM3" in cut:
+          if not IsHBM04RM3(hname): skip=True
         elif cut not in hname: skip = True
       if ("HB" in p) and ("HBP14RM1" not in p) and (IsHBP14RM1(hname)): skip=True
       if ("HB" in p) and ("HBM09RM3" not in p) and (IsHBM09RM3(hname)): skip=True
+      if ("HB" in p) and ("HBM04RM3" not in p) and (IsHBM04RM3(hname)): skip=True
       if not skip:
         mean = histos[unit][subdet][hname].GetMean()
         rms = histos[unit][subdet][hname].GetRMS()
