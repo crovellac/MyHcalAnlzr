@@ -8,13 +8,15 @@ import ROOT
 import os, sys
 from array import array
 
+# Generally, old measurement have smaller weight
+fittingweight = 0.10 # Smaller values makes weight more equal for all measurements
 
-def ReadSaveFile(savefilename):
-  with open(savefilename) as savefile:
+def ReadSaveFile():
+  with open('SaveFile.txt') as savefile:
     lines = [line.rstrip() for line in savefile]
   if lines != sorted(lines): # Sort file
     print("Going to sort")
-    os.system('mv '+savefilename+' '+savefilename+'_old')
+    os.system('mv SaveFile.txt SaveFile.txt_old')
     # First remove duplicate entries with different result: Save newer one
     lines2 = []
     contains = []
@@ -33,7 +35,7 @@ def ReadSaveFile(savefilename):
           #print('Going to replace "',delme,'" with "',l,'"')
       lines2.append(l)
     lastline = ""
-    with open(savefilename, 'w') as savefile:
+    with open('SaveFile.txt', 'w') as savefile:
       for l in sorted(lines2):
         if l==lastline: continue # Remove exact duplicates
         if l.split()[-1] == "0": continue # Ignore empty entries
@@ -62,7 +64,7 @@ def ReadSaveFile(savefilename):
 
   return values
 
-def MakeGraph(values, trendtype, meanrms, what): # what in ["daysince", "lumi", "wholerun"]
+def MakeGraph(values, trendtype, meanrms, what): # what in ["daysince", "lumi"]
   allvals = {}
   for ID in values[trendtype]:
     yval = 0.0
@@ -73,8 +75,6 @@ def MakeGraph(values, trendtype, meanrms, what): # what in ["daysince", "lumi", 
       xval = int(ID.split("_")[1])
     elif what=="lumi":
       xval = float(ID.split("_")[0])
-    elif what=="wholerun":
-      xval = int(ID.split("_")[0])
     allvals[xval] = yval
 
   x = []
@@ -104,25 +104,26 @@ def MinMaxAxis(minv, maxv, mindist):
     thismin = thismax*0.2/1.2
   return thismin, thismax
 
-#adc2fC = [ # https://github.com/cms-sw/cmssw/blob/f5b4310413558919869e0dfa7c9c231e4b2b03fc/DQM/HcalCommon/interface/Constants.h#L253
-#        1.58,   4.73,   7.88,   11.0,   14.2,   17.3,   20.5,   23.6,   26.8,   29.9,   33.1,   36.2,   39.4,
-#        42.5,   45.7,   48.8,   53.6,   60.1,   66.6,   73.0,   79.5,   86.0,   92.5,   98.9,   105,    112,
-#        118,    125,    131,    138,    144,    151,    157,    164,    170,    177]
-#adc2fc_graph = ROOT.TGraph(len(adc2fC), array('d', range(len(adc2fC))), array('d', adc2fC))
-#fc2adc_graph = ROOT.TGraph(len(adc2fC), array('d', adc2fC), array('d', range(len(adc2fC))))
+adc2fC = [ # https://github.com/cms-sw/cmssw/blob/f5b4310413558919869e0dfa7c9c231e4b2b03fc/DQM/HcalCommon/interface/Constants.h#L253
+        1.58,   4.73,   7.88,   11.0,   14.2,   17.3,   20.5,   23.6,   26.8,   29.9,   33.1,   36.2,   39.4,
+        42.5,   45.7,   48.8,   53.6,   60.1,   66.6,   73.0,   79.5,   86.0,   92.5,   98.9,   105,    112,
+        118,    125,    131,    138,    144,    151,    157,    164,    170,    177]
+adc2fC = [6*val for val in adc2fC] # Shunt 6
+adc2fc_graph = ROOT.TGraph(len(adc2fC), array('d', range(len(adc2fC))), array('d', adc2fC))
+fc2adc_graph = ROOT.TGraph(len(adc2fC), array('d', adc2fC), array('d', range(len(adc2fC))))
 
-#fc2adc_fit = ROOT.TF1( 'fc2adc_fit', "([2]+[3]*x)*(x<45.7) + ([4]+[5]*x)*(x>53.6) + (([2]+[3]*x)*(53.6-x)/(53.6-45.7)+([4]+[5]*x)*(x-45.7)/(53.6-45.7))*(x>=45.7)*(x<=53.6)", 0, 180)
-#fc2adc_fit.SetParameter(2,1.58)
-#fc2adc_fit.SetParameter(3,3.15)
-#fc2adc_fit.SetParameter(4,-50)
-#fc2adc_fit.SetParameter(5,6.3)
-#fc2adc_graph.Fit("fc2adc_fit", "F")
+fc2adc_fit = ROOT.TF1( 'fc2adc_fit', "([2]+[3]*x)*(x<45.7) + ([4]+[5]*x)*(x>53.6) + (([2]+[3]*x)*(53.6-x)/(53.6-45.7)+([4]+[5]*x)*(x-45.7)/(53.6-45.7))*(x>=45.7)*(x<=53.6)", 0, 180)
+fc2adc_fit.SetParameter(2,1.58)
+fc2adc_fit.SetParameter(3,3.15)
+fc2adc_fit.SetParameter(4,-50)
+fc2adc_fit.SetParameter(5,6.3)
+fc2adc_graph.Fit("fc2adc_fit", "F")
 
-#def ADCtoFC(adc):
-#  return adc2fc_graph.Eval(adc)
+def ADCtoFC(adc):
+  return adc2fc_graph.Eval(adc)
 
-#def FCtoADC(fc):
-#  return fc2adc_graph.Eval(fc)
+def FCtoADC(fc):
+  return fc2adc_graph.Eval(fc)
 
 def MakeExtrapolation(gr, trend):
   N = gr[trend]["MeanMean"].GetN()
@@ -135,7 +136,7 @@ def MakeExtrapolation(gr, trend):
     y[-1] += 2*gr[trend]["MeanRMS"].GetPointY(i)
     y[-1] += 2*gr[trend]["RMSMean"].GetPointY(i)
     y[-1] += 2*gr[trend]["RMSRMS"].GetPointY(i)
-    e.append(N-i)
+    e.append(fittingweight*(N-i+1))
   gr = ROOT.TGraph(len(x), array('d', x), array('d', y))
   grerr = ROOT.TGraphErrors(len(x), array('d', x), array('d', y), array('d', e), array('d', e))
   return gr, grerr
@@ -157,7 +158,7 @@ def MakeChargeExtrapolation(gr, trend):
     fc += 2*gr[trend]["RMSRMS"].GetPointY(i)
     fc = ADCtoFC(fc)
     y.append(fc)
-    e.append(N-i)
+    e.append(fittingweight*(N-i+1))
   gr = ROOT.TGraph(len(x), array('d', x), array('d', y))
   grerr = ROOT.TGraphErrors(len(x), array('d', x), array('d', y), array('d', e), array('d', e))
   return gr, grerr
@@ -170,29 +171,22 @@ ROOT.gROOT.SetBatch(True)
 if len(sys.argv)>1:
   inputfile = sys.argv[1]
 else:
-  inputfile = "hist_CalibOutput_hadd.root"
+  inputfile = "hist_LocalOutput_hadd.root"
 #fin.ls()
 
-if len(sys.argv)>2 and sys.argv[2] in ["daysince", "lumi", "wholerun"]:
+if len(sys.argv)>2 and sys.argv[2] in ["daysince", "lumi"]:
   dowhat = sys.argv[2]
 else:
   dowhat = "daysince"
 
-if dowhat!="wholerun":
-  output = inputfile.split(".")[0]+"_"+dowhat+"/"
-  if not os.path.isdir(output): os.mkdir(output)
-  fin=ROOT.TFile.Open(inputfile, "READ")
-else:
-  output = "WholeRunOutput_"+inputfile+"/"
+output = inputfile.split(".")[0]+"_"+dowhat+"/"
+if not os.path.isdir(output): os.mkdir(output)
+fin=ROOT.TFile.Open(inputfile, "READ")
 
-savefilename = 'SaveFile.txt'
 if dowhat == "daysince":
-  xtitle = "Days since 6th April 2023" #"Days since 5th July"
+  xtitle = "Days since 19th March 2024"
 elif dowhat == "lumi":
   xtitle = "Luminosity [fb^{-1}]"
-elif dowhat == "wholerun":
-  xtitle = "Luminosity section"
-  savefilename = 'SaveFile_'+inputfile+'.txt'
 
 runstoplot = []
 if len(sys.argv)>3:
@@ -200,7 +194,7 @@ if len(sys.argv)>3:
 
 
 ##### Prepare trend plots
-values = ReadSaveFile(savefilename)
+values = ReadSaveFile()
 trends = []
 for trend in values:
   if trend not in trends: trends.append(trend)
@@ -242,13 +236,18 @@ for title in grdict:
     subdet = grdict[title][1]
     parts = [trend for trend in trends if trend.startswith(subdet) and trend.endswith(unit) and "depth" not in trend]
     # Manually sort:
-    if parts == ['HB_sipmLarge_'+unit, 'HB_sipmLarge_HBM09RM3_'+unit, 'HB_sipmLarge_HBP14RM1_'+unit, 'HB_sipmLarge_phi,1,72_'+unit, 'HB_sipmLarge_phi,18,19_'+unit, 'HB_sipmLarge_phi,36,37_'+unit, 'HB_sipmSmall_'+unit, 'HB_sipmSmall_HBM09RM3_'+unit, 'HB_sipmSmall_HBP14RM1_'+unit, 'HB_sipmSmall_phi,1,72_'+unit, 'HB_sipmSmall_phi,18,19_'+unit, 'HB_sipmSmall_phi,36,37_'+unit]:
-      parts = ['HB_sipmLarge_'+unit, 'HB_sipmSmall_'+unit, 'HB_sipmLarge_phi,1,72_'+unit, 'HB_sipmSmall_phi,1,72_'+unit, 'HB_sipmLarge_phi,36,37_'+unit, 'HB_sipmSmall_phi,36,37_'+unit, 'HB_sipmLarge_HBP14RM1_'+unit, 'HB_sipmSmall_HBP14RM1_'+unit, 'HB_sipmLarge_HBM09RM3_'+unit, 'HB_sipmSmall_HBM09RM3_'+unit] # , 'HB_sipmLarge_phi,18,19_'+unit, 'HB_sipmSmall_phi,18,19_'+unit
-    if parts == ['HE_sipmLarge_'+unit, 'HE_sipmLarge_phi,1,72_'+unit, 'HE_sipmLarge_phi,18,19_'+unit, 'HE_sipmLarge_phi,36,37_'+unit, 'HE_sipmSmall_'+unit, 'HE_sipmSmall_phi,1,72_'+unit, 'HE_sipmSmall_phi,18,19_'+unit, 'HE_sipmSmall_phi,36,37_'+unit]:
-      parts = ['HE_sipmLarge_'+unit, 'HE_sipmSmall_'+unit, 'HE_sipmLarge_phi,1,72_'+unit, 'HE_sipmSmall_phi,1,72_'+unit, 'HE_sipmLarge_phi,36,37_'+unit, 'HE_sipmSmall_phi,36,37_'+unit] # , 'HE_sipmLarge_phi,18,19_'+unit, 'HE_sipmSmall_phi,18,19_'+unit
+    #if parts == ['HB_sipmLarge_'+unit, 'HB_sipmLarge_HBM04RM3_'+unit, 'HB_sipmLarge_HBM09RM3_'+unit, 'HB_sipmLarge_HBP14RM1_'+unit, 'HB_sipmSmall_'+unit, 'HB_sipmSmall_HBM04RM3_'+unit, 'HB_sipmSmall_HBM09RM3_'+unit, 'HB_sipmSmall_HBP14RM1_'+unit]:
+      #print("Sorting this")
+      #parts = ['HB_sipmLarge_'+unit, 'HB_sipmSmall_'+unit,  'HB_sipmLarge_HBP14RM1_'+unit,'HB_sipmSmall_HBP14RM1_'+unit, 'HB_sipmLarge_HBM09RM3_'+unit, 'HB_sipmSmall_HBM09RM3_'+unit, 'HB_sipmLarge_HBM04RM3_'+unit, 'HB_sipmSmall_HBM04RM3_'+unit,] # , 'HB_sipmLarge_phi,18,19_'+unit, 'HB_sipmSmall_phi,18,19_'+unit
+    #if parts == ['HE_sipmLarge_'+unit, 'HE_sipmLarge_phi,1,72_'+unit, 'HE_sipmLarge_phi,18,19_'+unit, 'HE_sipmLarge_phi,36,37_'+unit, 'HE_sipmSmall_'+unit, 'HE_sipmSmall_phi,1,72_'+unit, 'HE_sipmSmall_phi,18,19_'+unit, 'HE_sipmSmall_phi,36,37_'+unit]:
+     # parts = ['HE_sipmLarge_'+unit, 'HE_sipmSmall_'+unit, 'HE_sipmLarge_phi,1,72_'+unit, 'HE_sipmSmall_phi,1,72_'+unit, 'HE_sipmLarge_phi,36,37_'+unit, 'HE_sipmSmall_phi,36,37_'+unit] # , 'HE_sipmLarge_phi,18,19_'+unit, 'HE_sipmSmall_phi,18,19_'+unit
     thismin, thismax = MinMaxAxis((limits[trend+meanrms][0] for trend in parts), (limits[trend+meanrms][1] for trend in parts), 0.5)
-    if subdet=="HB": color = ROOT.kBlue
-    elif subdet=="HE": color = ROOT.kGreen
+    if subdet=="HB":
+        parts = ['HB_sipmLarge_'+unit, 'HB_sipmSmall_'+unit,  'HB_sipmLarge_HBP14RM1_'+unit,'HB_sipmSmall_HBP14RM1_'+unit, 'HB_sipmLarge_HBM09RM3_'+unit, 'HB_sipmSmall_HBM09RM3_'+unit, 'HB_sipmLarge_HBM04RM3_'+unit, 'HB_sipmSmall_HBM04RM3_'+unit,]
+        color = ROOT.kBlue
+    elif subdet=="HE":
+        parts = ['HE_sipmLarge_'+unit, 'HE_sipmSmall_'+unit]
+        color = ROOT.kGreen
     elif subdet=="HF": color = ROOT.kRed
     elif subdet=="HO": color = ROOT.kBlack
     lowedge = 999
@@ -266,7 +265,7 @@ for title in grdict:
         tcolor = color-5
         marker = 23
         line = 5
-      elif "phi,18," in part:
+      elif "phi,12," in part:
         tcolor = color-7
         marker = 20
         line = 6
@@ -278,6 +277,10 @@ for title in grdict:
         tcolor = color+4
         marker = 34
         line = 8
+      elif "HBM04RM3" in part:
+        tcolor = color+4
+        marker = 35
+        line = 9
       else:
         tcolor = color
         marker = 21
@@ -287,7 +290,7 @@ for title in grdict:
       gr[part][meanrms].SetMarkerStyle(marker)
       gr[part][meanrms].SetMarkerColor(tcolor)
       if j==0:
-        gr[part][meanrms].SetTitle(title)
+        gr[part][meanrms].SetTitle("Global "+title)
         gr[part][meanrms].GetXaxis().SetTitle(xtitle)
         gr[part][meanrms].GetXaxis().SetDecimals()
         #gr[part][meanrms].GetXaxis().SetMaxDigits(3)
@@ -310,18 +313,19 @@ for title in grdict:
       if subdet in ["HB", "HE"]:
         if "Small" in part: sizename = "Small SiPM"
         elif "Large" in part: sizename = "Large SiPM"
-        if "phi,36," in part: sizename += ", iphi in [36,37]"
-        elif "phi,18," in part: sizename += ", iphi in [18,19]"
-        elif "phi,1," in part: sizename += ", iphi in [72,1]"
-        elif "HBP14RM1" in part: sizename += ", HBP14 RM1"
-        elif "HBM09RM3" in part: sizename += ", HBM09 RM3"
+        if "phi,36," in part: sizename += ", iphi in [36,37]" 
+        elif "phi,18," in part: sizename += ", iphi in [18,19]" 
+        elif "phi,1," in part: sizename += ", iphi in [72,1]" 
+        elif "HBP14RM1" in part: sizename += ", HBP14 RM1" 
+        elif "HBM09RM3" in part: sizename += ", HBM09 RM3" 
+        elif "HBM04RM3" in part: sizename += ", HBM04 RM3"
       label = subdet + " " + sizename + ""
       legend[-1].AddEntry(gr[part][meanrms], label, "pl")
     # Vertical lines at 1st of every month
     if dowhat=="daysince":
       monthlines = []
       for linehere in [31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334]:
-        linehere = linehere - 95 # Start counting from 6th April instead of 1st January
+        linehere = linehere - 77 # Start counting from 6th April instead of 1st January
         if lowedge > linehere or upedge < linehere: continue
         monthlines.append(ROOT.TLine(linehere, thismin - (thismax-thismin)*0.2, linehere, thismax + (thismax-thismin)*0.3))
         monthlines[-1].SetLineStyle(3)
@@ -331,7 +335,6 @@ for title in grdict:
     c[-1].SaveAs(output+title.replace(" ", "_")+"_"+unit+".png")
     c[-1].SaveAs(output+title.replace(" ", "_")+"_"+unit+".pdf")
 
-if dowhat=="wholerun": exit()
 
 ##### Prepare runs for histograms
 if runstoplot!=[]:
@@ -346,7 +349,7 @@ else:
         allruns.append(run)
   allruns.sort()
   ## Select only 4 runs: First, middle, last
-  if True:
+  if False:
     runs = [allruns[0]]
     if len(allruns)>3:
       runs.append(allruns[int(len(allruns)/3)])
@@ -565,16 +568,34 @@ for unit in ["ADC", "FC"]:
     c[-1].SaveAs(output+"PedestalPerPhi_"+alpha+"_"+subdet+"_"+unit+".pdf")
 
 # Extrapolation plots (makes more sense for lumi)
-if dowhat=="lumi" and False: # Disabled: Probably doesn't make sense with how dependent the measurements are on inst. lumi.
+if dowhat=="lumi":
   exhists = []
-  for trend in ["HB_sipmLarge", "HB_sipmSmall", "HE_sipmLarge", "HE_sipmSmall", "HF", "HO", "HB_sipmLarge_phi,1,72", "HB_sipmLarge_phi,36,37"]:
+  for trend in trends:
+   if "_FC" in trend: continue
+   for unit in ["ADC", "FC"]:
+    trend = trend.replace("ADC", unit)
     exhists.append(None)
     exhists[-1], exhistserror = MakeExtrapolation(gr, trend)
     maxx = 1.5*exhists[-1].GetPointX(exhists[-1].GetN()-1)
     #fit = ROOT.TF1( 'fit', "[0]+[1]*x+[2]*x*x", exhists[-1].GetPointX(0), exhists[-1].GetPointX(exhists[-1].GetN()-1))
-    fit = ROOT.TF1( 'fit', "[0]+[1]*x", exhists[-1].GetPointX(0), maxx)
+    fit = ROOT.TF1( 'fit', "[0]+[1]*sqrt(x)+[2]*x", exhists[-1].GetPointX(0), maxx)
     #fit = ROOT.TF1( 'fit', "[0]+[1]*x^[2]", exhists[-1].GetPointX(0), maxx)
     #fit.SetParameter(2,1.0)
+    fit.SetParLimits(0,0,999)
+    fit.SetParLimits(1,0,999)
+    fit.SetParLimits(2,0,999)
+    if "HF" in trend or "HO" in trend:
+      fit.SetParameter(0,10.0)
+      fit.SetParameter(1,0.01)
+      fit.SetParameter(2,0.00001)
+    elif unit=="ADC":
+      fit.SetParameter(0,10.0)
+      fit.SetParameter(1,0.1)
+      fit.SetParameter(2,0.1)
+    else:
+      fit.SetParameter(0,100.0)
+      fit.SetParameter(1,1.0)
+      fit.SetParameter(2,1.0)
     exhistserror.Fit("fit", "F")
 
     if "HB" in trend: color = ROOT.kBlue
@@ -589,7 +610,8 @@ if dowhat=="lumi" and False: # Disabled: Probably doesn't make sense with how de
     exhists[-1].GetXaxis().SetTitle(xtitle)
     exhists[-1].GetXaxis().SetDecimals()
     exhists[-1].GetXaxis().SetLimits(exhists[-1].GetPointX(0), maxx)
-    if "HF" in trend: ytitle = "ADC (QIE10)"
+    if "FC" in trend: ytitle = "Q (fC)"
+    elif "HF" in trend: ytitle = "ADC (QIE10)"
     elif "HO" in trend: ytitle = "ADC (QIE8)"
     else: ytitle = "ADC (QIE11)"
     exhists[-1].GetYaxis().SetTitle(ytitle)
@@ -609,58 +631,55 @@ if dowhat=="lumi" and False: # Disabled: Probably doesn't make sense with how de
     legend[-1].Draw()
 
     # Now draw hori/vert lines at every ADC count beyond current measurments
-    lines = []
-    for alpha in range(int(exhists[-1].GetPointY(exhists[-1].GetN()-1))+1, int(fit.Eval(maxx))+1):
-      XatY = fit.GetX(alpha)
-      lines.append(ROOT.TLine(exhists[-1].GetPointX(0), alpha, XatY, alpha))
-      lines.append(ROOT.TLine(XatY, thismin - (thismax-thismin)*0.2, XatY, alpha))
-      lines[-2].SetLineColor(ROOT.kRed)
-      lines[-1].SetLineColor(ROOT.kRed)
-      lines[-2].Draw("SAME")
-      lines[-1].Draw("SAME")
+    if "ADC" in trend:
+      lines = []
+      for alpha in range(int(exhists[-1].GetPointY(exhists[-1].GetN()-1))+1, int(fit.Eval(maxx))+1):
+        XatY = fit.GetX(alpha)
+        lines.append(ROOT.TLine(exhists[-1].GetPointX(0), alpha, XatY, alpha))
+        lines.append(ROOT.TLine(XatY, thismin - (thismax-thismin)*0.2, XatY, alpha))
+        lines[-2].SetLineColor(ROOT.kRed)
+        lines[-1].SetLineColor(ROOT.kRed)
+        lines[-2].Draw("SAME")
+        lines[-1].Draw("SAME")
 
     c[-1].SaveAs(output+"Extrapolation_"+trend+".png")
     c[-1].SaveAs(output+"Extrapolation_"+trend+".pdf")
     del exhistserror
-    del fit
+    if "ADC" in trend: del fit
 
 
-    ## Fit after translating ADC to FC
-    #exhists.append(None)
-    temphist, temphisterror = MakeChargeExtrapolation(gr, trend)
-    maxx = 1.5*exhists[-1].GetPointX(exhists[-1].GetN()-1)
-    fitfc = ROOT.TF1( 'fitfc', "[0]+[1]*x", exhists[-1].GetPointX(0), maxx)
-    temphisterror.Fit("fitfc", "F")
-    fit = ROOT.TF1( 'fit', "fc2adc_fit(fitfc(x))", exhists[-1].GetPointX(0), maxx)
-    fit.SetParameter(0,fitfc.GetParameter(0))
-    fit.SetParameter(1,fitfc.GetParameter(1))
-    print(fitfc.Eval(20), fc2adc_fit.Eval(41), fc2adc_graph.Eval(41), fc2adc_fit.Eval(fitfc.Eval(20)), fit.Eval(20), fc2adc_graph.Eval(adc2fc_graph.Eval(12.5)))
+    ## Plot ADC extrapolation after converted from FC
+    if "FC" in trend:
+      fit2adc = ROOT.TF1( 'fit', "fc2adc_fit(fit(x))", exhists[-1].GetPointX(0), maxx)
+      fit2adc.SetParameter(0,fit.GetParameter(0))
+      fit2adc.SetParameter(1,fit.GetParameter(1))
+      fit2adc.SetParameter(2,fit.GetParameter(2))
+      #print(fitfc.Eval(20), fc2adc_fit.Eval(41), fc2adc_graph.Eval(41), fc2adc_fit.Eval(fitfc.Eval(20)), fit.Eval(20), fc2adc_graph.Eval(adc2fc_graph.Eval(12.5)))
 
-    c.append(ROOT.TCanvas( 'c'+str(len(c)+1), 'c'+str(len(c)+1), 600, 600 ))
-    c[-1].cd()
-    exhists[-1].Draw()
-    c[-1].Draw()
-    fit.Draw("SAME")
-    legend.append(ROOT.TLegend(0.1,0.8,0.9,0.9))
-    legend[-1].AddEntry(exhists[-1],"#mu_{#mu} + 2*#mu_{#sigma} + 2*#sigma_{#mu} + 2*#sigma_{#sigma}","pl")
-    legend[-1].AddEntry(fit,"Linear fit (weighted towards recent data)","l")
-    legend[-1].Draw()
+      c.append(ROOT.TCanvas( 'c'+str(len(c)+1), 'c'+str(len(c)+1), 600, 600 ))
+      c[-1].cd()
+      exhists[-2].Draw() # ADC
+      c[-1].Draw()
+      fit2adc.Draw("SAME")
+      legend.append(ROOT.TLegend(0.1,0.8,0.9,0.9))
+      legend[-1].AddEntry(exhists[-1],"#mu_{#mu} + 2*#mu_{#sigma} + 2*#sigma_{#mu} + 2*#sigma_{#sigma}","pl")
+      legend[-1].AddEntry(fit2adc,"Linear fit (weighted towards recent data)","l")
+      legend[-1].Draw()
 
-    # Now draw hori/vert lines at every ADC count beyond current measurments
-    lines = []
-    for alpha in range(int(exhists[-1].GetPointY(exhists[-1].GetN()-1))+1, int(fit.Eval(maxx))+1):
-      XatY = fit.GetX(alpha)
-      lines.append(ROOT.TLine(exhists[-1].GetPointX(0), alpha, XatY, alpha))
-      lines.append(ROOT.TLine(XatY, thismin - (thismax-thismin)*0.2, XatY, alpha))
-      lines[-2].SetLineColor(ROOT.kRed)
-      lines[-1].SetLineColor(ROOT.kRed)
-      lines[-2].Draw("SAME")
-      lines[-1].Draw("SAME")
+      # Now draw hori/vert lines at every ADC count beyond current measurments
+      lines = []
+      for alpha in range(int(exhists[-1].GetPointY(exhists[-1].GetN()-1))+1, int(fit2adc.Eval(maxx))+1):
+        XatY = fit2adc.GetX(alpha)
+        lines.append(ROOT.TLine(exhists[-1].GetPointX(0), alpha, XatY, alpha))
+        lines.append(ROOT.TLine(XatY, thismin - (thismax-thismin)*0.2, XatY, alpha))
+        lines[-2].SetLineColor(ROOT.kRed)
+        lines[-1].SetLineColor(ROOT.kRed)
+        lines[-2].Draw("SAME")
+        lines[-1].Draw("SAME")
 
-    c[-1].SaveAs(output+"ExtrapolationFC_"+trend+".png")
-    c[-1].SaveAs(output+"ExtrapolationFC_"+trend+".pdf")
-    del temphist
-    del temphisterror
-    del fit
+      c[-1].SaveAs(output+"ExtrapolationFC2ADC_"+trend+".png")
+      c[-1].SaveAs(output+"ExtrapolationFC2ADC_"+trend+".pdf")
+      del fit
+      del fit2adc
 
 exit()

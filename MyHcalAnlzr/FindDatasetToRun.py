@@ -45,10 +45,13 @@ def MakeSmall(path):
 #path = "/eos/cms/tier0/store/data/Commissioning2024/TestEnablesEcalHcal/*/*/*"
 #path = "/eos/cms/tier0/store/data/Run2024A/TestEnablesEcalHcal/*/*/*"
 #path = "/eos/cms/tier0/store/data/Run2024B/TestEnablesEcalHcal/*/*/*"
-path = "/eos/cms/tier0/store/data/Run2024C/TestEnablesEcalHcal/*/*/*" #04.14 - 
+#path = "/eos/cms/tier0/store/data/Run2024C/TestEnablesEcalHcal/*/*/*" #04.14-05.02
+#path = "/eos/cms/tier0/store/data/Run2024D/TestEnablesEcalHcal/*/*/*" #05.03-
+path = "/eos/cms/tier0/store/data/Run2024E/TestEnablesEcalHcal/*/*/*"
 
 blacklist_file = ["244aa98d-1bc6-4c3f-bf02-36032473b104.root"]
-whitelist_file = ["0bc49ae3-69bc-439c-8dde-526a71ca1e39.root", "4e32fe18-85ca-4c35-9790-821dd051f4cf.root", "abbda151-86ea-4609-a0ba-820fd14fa9e9.root", "3afeb82e-a911-46c2-bbcb-dc74f90022cd.root", "663ffe17-ddf0-43b5-ba49-24594331baaf.root", "0ba626ee-a60a-436a-bd10-35d05934908f.root", "5f0f2e56-2c6f-4943-95fb-49c79ef053f7.root", "d0497690-6393-44c9-a08f-ec046e5f5cf7.root", "4c993032-6af5-4ea1-8fc0-d0bea61b10e2.root", "56d254ac-75ed-429f-98f1-9adcf3ddfae5.root", "5cbd009b-9bc2-4b78-910f-ec0e6241b45d.root", "7113de5d-820b-444b-bbf6-ecda79961a7f.root"] # Use this file, to get ZS threshold at certain inst. lumi.
+#whitelist_file = ["0bc49ae3-69bc-439c-8dde-526a71ca1e39.root", "4e32fe18-85ca-4c35-9790-821dd051f4cf.root", "abbda151-86ea-4609-a0ba-820fd14fa9e9.root", "3afeb82e-a911-46c2-bbcb-dc74f90022cd.root", "663ffe17-ddf0-43b5-ba49-24594331baaf.root", "0ba626ee-a60a-436a-bd10-35d05934908f.root", "5f0f2e56-2c6f-4943-95fb-49c79ef053f7.root", "d0497690-6393-44c9-a08f-ec046e5f5cf7.root", "4c993032-6af5-4ea1-8fc0-d0bea61b10e2.root", "56d254ac-75ed-429f-98f1-9adcf3ddfae5.root", "5cbd009b-9bc2-4b78-910f-ec0e6241b45d.root", "7113de5d-820b-444b-bbf6-ecda79961a7f.root"] # Use this file, to get ZS threshold at certain inst. lumi.
+whitelist_file = ["66a51c95-4b4e-4a68-bf9e-dcdd98c43dc2.root","37a254c1-8572-41a8-a577-99867fcc6a04.root"]
 
 allfiles_list = [f for f in glob.glob(path+"/*/*/*/*") if f.endswith(".root") and f.split("/")[-1] not in blacklist_file]
 print("There are",len(allfiles_list),"files total")

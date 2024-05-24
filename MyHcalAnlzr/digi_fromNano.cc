@@ -597,12 +597,17 @@ int main(int argc, char *argv[])
   ////
   cout << "Preparing matching map..." << endl; // Find eta/phi/depth matching to crate/slot/fiber/channel, for HBHE only (Reminder that some eta/phi/depth overlap between HBHE and HFHO)
   map<string, string> matching;
+  map<string, int> matchingHO;
   ifstream infile("lmap_complete.txt"); 
   string line, sumone, sumtwo, strgarbage;
   int side, eta, phi, dep, crate, slot, fiber, channel, garbage;
-  vector<string> ishbhe{ "HB", "HBX", "HE", "HEX" };
+  //vector<string> ishbhe{ "HB", "HBX", "HE", "HEX" };
+  vector<string> ishbhe{"HB", "HBX", "HE", "HEX", "HO", "HOX"};
+  vector<string> isho{ "HO", "HOX"};
+  bool itsHBHE;
   while (getline(infile, line))
   {
+    itsHBHE = false;
     istringstream iss(line);
     iss >> side;
     iss >> eta;
@@ -612,6 +617,7 @@ int main(int argc, char *argv[])
     iss >> garbage; // CH_TYPE
     iss >> strgarbage; // Det
     if(find(ishbhe.begin(), ishbhe.end(), strgarbage) == ishbhe.end()) continue;
+    if(find(isho.begin(), isho.end(), strgarbage) == isho.end()) itsHBHE = true;
     iss >> strgarbage; // RBX
     iss >> garbage; // Wedge
     iss >> garbage; // MB_NO
@@ -637,10 +643,16 @@ int main(int argc, char *argv[])
     iss >> slot; // uHTR
     iss >> fiber; // uHTR_FI
 
-    eta = eta * side;
+    //eta = eta * side;
     sumone = to_string(crate)+"_"+to_string(slot)+"_"+to_string(fiber)+"_"+to_string(channel);
-    sumtwo = to_string(eta)+" "+to_string(phi)+" "+to_string(dep);
-    matching[sumone] = sumtwo;
+    //sumtwo = to_string(eta)+" "+to_string(phi)+" "+to_string(dep);
+    //matching[sumone] = sumtwo;
+    sumtwo = to_string(eta * side)+" "+to_string(phi)+" "+to_string(dep);
+    if(itsHBHE){
+      matching[sumone] = sumtwo;
+    }else{
+      matchingHO[sumone] = eta;
+    }
   }
 
   cout << "Writing xml..." << endl;
@@ -648,7 +660,7 @@ int main(int argc, char *argv[])
   ofstream xmlfile;
   xmlfile.open(floatday+".2024.xml");
   //string tag = "hb12-13_he8_hf0_ho11_v14";
-  string tag = floatday+"_MeanPlus"+StrXtimesRMS+"RMS";
+  string tag = floatday+".2024_MeanPlus"+StrXtimesRMS+"RMS";
   auto MakeNewBrick = [&xmlfile](int crate, int slot, int elements, string tag){
     xmlfile << "  <CFGBrick>" << "\n";
     xmlfile << "    <Parameter name=\"INFOTYPE\" type=\"string\">ZS</Parameter>" << "\n";
@@ -840,8 +852,26 @@ int main(int argc, char *argv[])
   for(int crate: HOcrateVec){
     for(int slot=1; slot<10; slot++){
       if(crate!=26 and slot==9) continue;
+      //MakeNewBrick(crate, slot, 72, tag);
+      //xmlfile << "b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b";
+      int filled = 0;
+      int ZS, eta;
       MakeNewBrick(crate, slot, 72, tag);
-      xmlfile << "b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b";
+      //xmlfile << "b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b";
+      for(int fiber=0; fiber<24; fiber++){
+        for(int channel=0; channel<3; channel++){
+          eta = matchingHO[to_string(crate)+"_"+to_string(slot)+"_"+to_string(fiber)+"_"+to_string(channel)];
+          ZS = 11; // HO-0
+          if(eta >= 5 && eta <= 10){ // HO-1PM
+            ZS = 14;
+          }else if(eta >= 11 && eta <= 15){ // HO-2PM
+            ZS = 16;
+          }
+          xmlfile << hex << ZS;
+          filled++;
+          if(72 != filled) xmlfile << " ";
+        }
+      }
       EndBrick();
     }
   }

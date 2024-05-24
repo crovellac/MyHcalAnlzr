@@ -41,4 +41,17 @@
 #source doEverything.sh 37 4.259 25.04 379984
 #source doEverything.sh 38 4.978 26.04 380030
 #source doEverything.sh 39 6.087 27.04 380049
-source doEverything.sh 40 6.684 28.04 380074
+#source doEverything.sh 40 6.684 28.04 380074
+#source doEverything.sh 41 7.321 29.04 380115
+#source doEverything.sh 42 8.032 30.04 380128
+#source doEverything.sh 43 8.361 01.05 380236
+#source doEverything.sh 44 8.581 02.05 380249
+#source doEverything.sh 45 9.024 03.05 380310
+#source doEverything.sh 46 10.302 04.05 380360
+#source doEverything.sh 47 11.215 05.05 380384
+#source doEverything.sh 48 12.100 06.05 380444
+#source doEverything.sh 49 13.064 07.05 380470
+#source doEverything.sh 50 13.606 08.05 380481
+
+
+source doEverything.sh 64 17.340 22.05  381022
